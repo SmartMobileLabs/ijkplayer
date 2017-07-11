@@ -673,6 +673,8 @@ public final class IjkMediaPlayer extends AbstractMediaPlayer {
     @Override
     public native long getDuration();
 
+    public native long getRenderedFrames();
+
     /**
      * Releases resources associated with this IjkMediaPlayer object. It is
      * considered good practice to call this method when you're done using the

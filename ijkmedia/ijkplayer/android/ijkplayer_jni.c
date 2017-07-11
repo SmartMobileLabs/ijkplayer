@@ -33,12 +33,15 @@
 #include "j4a/class/tv/danmaku/ijk/media/player/misc/IIjkIOHttp.h"
 #include "ijksdl/ijksdl_log.h"
 #include "../ff_ffplay.h"
+#include "../ff_ffplay_def.h"
 #include "ffmpeg_api_jni.h"
 #include "ijkplayer_android_def.h"
 #include "ijkplayer_android.h"
 #include "ijksdl/android/ijksdl_android_jni.h"
 #include "ijksdl/android/ijksdl_codec_android_mediadef.h"
 #include "ijkavformat/ijkavformat.h"
+
+#include "../ijkplayer_internal.h"
 
 #define JNI_MODULE_PACKAGE      "tv/danmaku/ijk/media/player"
 #define JNI_CLASS_IJKPLAYER     "tv/danmaku/ijk/media/player/IjkMediaPlayer"
@@ -258,6 +261,21 @@ IjkMediaPlayer_setVideoSurface(JNIEnv *env, jobject thiz, jobject jsurface)
 LABEL_RETURN:
     ijkmp_dec_ref_p(&mp);
     return;
+}
+
+// WEPTUN
+static jlong
+IjkMediaPlayer_getRenderedFrames(JNIEnv *env, jobject thiz)
+{
+    MPTRACE("%s\n", __func__);
+    IjkMediaPlayer *mp = jni_get_media_player(env, thiz);
+
+    JNI_CHECK_GOTO(mp, env, NULL, "mpjni: getRenderedFrames: null mp", LABEL_RETURN);
+    jlong rendered_frames = mp->ffplayer->stat.rendered_frames;
+
+LABEL_RETURN:
+    ijkmp_dec_ref_p(&mp);
+    return rendered_frames;
 }
 
 static void
@@ -1084,6 +1102,7 @@ static JNINativeMethod g_methods[] = {
     { "_setDataSourceIjkIOHttp",    "(Ltv/danmaku/ijk/media/player/misc/IIjkIOHttp;)V", (void *)IjkMediaPlayer_setDataSourceIjkIOHttpCallback },
 
     { "_setVideoSurface",       "(Landroid/view/Surface;)V", (void *) IjkMediaPlayer_setVideoSurface },
+    { "getRenderedFrames",      "()J",      (void *) IjkMediaPlayer_getRenderedFrames },
     { "_prepareAsync",          "()V",      (void *) IjkMediaPlayer_prepareAsync },
     { "_start",                 "()V",      (void *) IjkMediaPlayer_start },
     { "_stop",                  "()V",      (void *) IjkMediaPlayer_stop },

@@ -463,6 +463,8 @@ typedef struct FFTrackCacheStatistic
 
 typedef struct FFStatistic
 {
+    int64_t rendered_frames;
+
     int64_t vdec_type;
 
     float vfps;
