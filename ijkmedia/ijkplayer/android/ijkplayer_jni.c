@@ -267,7 +267,7 @@ LABEL_RETURN:
 static jlong
 IjkMediaPlayer_getRenderedFrames(JNIEnv *env, jobject thiz)
 {
-    MPTRACE("%s\n", __func__);
+    // MPTRACE("%s\n", __func__);
     IjkMediaPlayer *mp = jni_get_media_player(env, thiz);
 
     JNI_CHECK_GOTO(mp, env, NULL, "mpjni: getRenderedFrames: null mp", LABEL_RETURN);
