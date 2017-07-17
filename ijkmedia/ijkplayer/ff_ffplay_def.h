@@ -112,9 +112,9 @@
 #define SAMPLE_CORRECTION_PERCENT_MAX 10
 
 /* external clock speed adjustment constants for realtime sources based on buffer fullness */
-#define EXTERNAL_CLOCK_SPEED_MIN  0.900
-#define EXTERNAL_CLOCK_SPEED_MAX  1.010
-#define EXTERNAL_CLOCK_SPEED_STEP 0.001
+#define EXTERNAL_CLOCK_SPEED_MIN  0.000
+#define EXTERNAL_CLOCK_SPEED_MAX  10.000
+#define EXTERNAL_CLOCK_SPEED_STEP 0.1000
 
 /* we use about AUDIO_DIFF_AVG_NB A-V differences to make the average */
 #define AUDIO_DIFF_AVG_NB   20
