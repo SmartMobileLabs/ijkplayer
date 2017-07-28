@@ -4428,6 +4428,10 @@ int64_t ffp_get_property_int64(FFPlayer *ffp, int id, int64_t default_value)
             if (!ffp)
                 return default_value;
             return ffp->stat.cache_count_bytes;
+        case FFP_PROP_INT64_STATISTIC_RENDERED_FRAMES:
+            if (!ffp)
+                return default_value;
+            return ffp->stat.rendered_frames;
         default:
             return default_value;
     }

@@ -655,6 +655,9 @@ inline static int getPlayerOption(IJKFFOptionCategory category)
 {
     return _glView.fps;
 }
+- (CGFloat)renderedFrames {
+    return (CGFloat)ijkmp_get_property_int64(_mediaPlayer, FFP_PROP_INT64_STATISTIC_RENDERED_FRAMES, 0);;
+}
 
 inline static NSString *formatedDurationMilli(int64_t duration) {
     if (duration >=  1000) {

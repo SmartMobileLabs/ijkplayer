@@ -94,6 +94,7 @@ typedef enum IJKLogLevel {
 
 @property(nonatomic, readonly) CGFloat fpsInMeta;
 @property(nonatomic, readonly) CGFloat fpsAtOutput;
+@property(nonatomic, readonly) CGFloat renderedFrames;
 @property(nonatomic) BOOL shouldShowHudView;
 
 - (void)setOptionValue:(NSString *)value
