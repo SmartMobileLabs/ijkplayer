@@ -16,29 +16,20 @@
 # limitations under the License.
 #
 
-IJK_OPENSSL_UPSTREAM=https://github.com/openssl/openssl
-IJK_OPENSSL_FORK=https://github.com/Bilibili/openssl.git
-IJK_OPENSSL_COMMIT=OpenSSL_1_0_2k
-IJK_OPENSSL_LOCAL_REPO=extra/openssl
+
+IJK_SOUNDTOUCH_UPSTREAM=https://github.com/Bilibili/soundtouch.git
+IJK_SOUNDTOUCH_FORK=https://github.com/Bilibili/soundtouch.git
+IJK_SOUNDTOUCH_COMMIT=ijk-r0.1.2-dev
+IJK_SOUNDTOUCH_LOCAL_REPO=extra/soundtouch
 
 set -e
 TOOLS=tools
 
-echo "== pull openssl base =="
-sh $TOOLS/pull-repo-base.sh $IJK_OPENSSL_UPSTREAM $IJK_OPENSSL_LOCAL_REPO
+echo "== pull soundtouch base =="
+sh $TOOLS/pull-repo-base.sh $IJK_SOUNDTOUCH_UPSTREAM $IJK_SOUNDTOUCH_LOCAL_REPO
 
-function pull_fork()
-{
-    echo "== pull openssl fork $1 =="
-    sh $TOOLS/pull-repo-ref.sh $IJK_OPENSSL_FORK ios/openssl-$1 ${IJK_OPENSSL_LOCAL_REPO}
-    cd ios/openssl-$1
-    git checkout ${IJK_OPENSSL_COMMIT} -B ijkplayer
-    cd -
-}
-
-pull_fork "armv7"
-pull_fork "armv7s"
-pull_fork "arm64"
-pull_fork "i386"
-pull_fork "x86_64"
-
+echo "== pull soundtouch fork =="
+sh $TOOLS/pull-repo-ref.sh $IJK_SOUNDTOUCH_FORK ijkmedia/ijksoundtouch ${IJK_SOUNDTOUCH_LOCAL_REPO}
+cd ijkmedia/ijksoundtouch
+git checkout ${IJK_SOUNDTOUCH_COMMIT}
+cd -
