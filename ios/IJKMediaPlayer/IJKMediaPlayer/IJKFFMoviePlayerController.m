@@ -33,7 +33,7 @@
 #import "ijkioapplication.h"
 #include "string.h"
 
-static const char *kIJKFFRequiredFFmpegVersion = "ff3.2--ijk0.7.6--20170203--001";
+static const char *kIJKFFRequiredFFmpegVersion = "ff3.3--ijk0.8.0--20170829--001";
 
 // It means you didn't call shutdown if you found this object leaked.
 @interface IJKWeakHolder : NSObject
@@ -480,6 +480,7 @@ inline static int getPlayerOption(IJKFFOptionCategory category)
     _liveOpenDelegate       = nil;
     _nativeInvokeDelegate   = nil;
 
+    __unused id weakPlayer = (__bridge_transfer IJKFFMoviePlayerController*)ijkmp_set_weak_thiz(_mediaPlayer, NULL);
     __unused id weakHolder = (__bridge_transfer IJKWeakHolder*)ijkmp_set_inject_opaque(_mediaPlayer, NULL);
     __unused id weakijkHolder = (__bridge_transfer IJKWeakHolder*)ijkmp_set_ijkio_inject_opaque(_mediaPlayer, NULL);
     ijkmp_dec_ref_p(&_mediaPlayer);
@@ -575,16 +576,11 @@ inline static int getPlayerOption(IJKFFOptionCategory category)
     NSTimeInterval demux_cache = ((NSTimeInterval)ijkmp_get_playable_duration(_mediaPlayer)) / 1000;
 
     int64_t buf_forwards = _asyncStat.buf_forwards;
-    int64_t cache_forwards = _cacheStat.cache_buf_forwards;
     int64_t bit_rate = ijkmp_get_property_int64(_mediaPlayer, FFP_PROP_INT64_BIT_RATE, 0);
 
     if (buf_forwards > 0 && bit_rate > 0) {
         NSTimeInterval io_cache = ((float)buf_forwards) * 8 / bit_rate;
         demux_cache += io_cache;
-    }
-    if (cache_forwards > 0 && bit_rate > 0) {
-        NSTimeInterval cache_cache = ((float)cache_forwards) * 8 / bit_rate;
-        demux_cache += cache_cache;
     }
 
     return demux_cache;
@@ -753,8 +749,8 @@ inline static NSString *formatedSpeed(int64_t bytes, int64_t elapsed_milli) {
 
     int64_t bitRate = ijkmp_get_property_int64(_mediaPlayer, FFP_PROP_INT64_BIT_RATE, 0);
     [_glView setHudValue:[NSString stringWithFormat:@"-%@, %@",
-                         formatedSize(_cacheStat.cache_buf_forwards),
-                          formatedDurationBytesAndBitrate(_cacheStat.cache_buf_forwards, bitRate)] forKey:@"cache-forwards"];
+                         formatedSize(_cacheStat.cache_file_forwards),
+                          formatedDurationBytesAndBitrate(_cacheStat.cache_file_forwards, bitRate)] forKey:@"cache-forwards"];
     [_glView setHudValue:formatedSize(_cacheStat.cache_physical_pos) forKey:@"cache-physical-pos"];
     [_glView setHudValue:formatedSize(_cacheStat.cache_file_pos) forKey:@"cache-file-pos"];
     [_glView setHudValue:formatedSize(_cacheStat.cache_count_bytes) forKey:@"cache-bytes"];
@@ -867,6 +863,27 @@ inline static NSString *formatedSpeed(int64_t bytes, int64_t elapsed_milli) {
     if (!_mediaPlayer)
         return 0.0f;
     return ijkmp_get_property_float(_mediaPlayer, FFP_PROP_FLOAT_PLAYBACK_VOLUME, 1.0f);
+}
+
+- (int64_t)getFileSize
+{
+    if (!_mediaPlayer)
+        return 0;
+    return ijkmp_get_property_int64(_mediaPlayer, FFP_PROP_INT64_LOGICAL_FILE_SIZE, 0);
+}
+
+- (int64_t)trafficStatistic
+{
+    if (!_mediaPlayer)
+        return 0;
+    return ijkmp_get_property_int64(_mediaPlayer, FFP_PROP_INT64_TRAFFIC_STATISTIC_BYTE_COUNT, 0);
+}
+
+- (float)dropFrameRate
+{
+    if (!_mediaPlayer)
+        return 0;
+    return ijkmp_get_property_float(_mediaPlayer, FFP_PROP_FLOAT_DROP_FRAME_RATE, 0.0f);
 }
 
 inline static void fillMetaInternal(NSMutableDictionary *meta, IjkMediaMeta *rawMeta, const char *name, NSString *defaultValue)
@@ -1126,6 +1143,49 @@ inline static void fillMetaInternal(NSMutableDictionary *meta, IjkMediaMeta *raw
              object:self];
             break;
         }
+        case FFP_MSG_AUDIO_DECODED_START: {
+            NSLog(@"FFP_MSG_AUDIO_DECODED_START:\n");
+            [[NSNotificationCenter defaultCenter]
+             postNotificationName:IJKMPMoviePlayerFirstAudioFrameDecodedNotification
+             object:self];
+            break;
+        }
+        case FFP_MSG_VIDEO_DECODED_START: {
+            NSLog(@"FFP_MSG_VIDEO_DECODED_START:\n");
+            [[NSNotificationCenter defaultCenter]
+             postNotificationName:IJKMPMoviePlayerFirstVideoFrameDecodedNotification
+             object:self];
+            break;
+        }
+        case FFP_MSG_OPEN_INPUT: {
+            NSLog(@"FFP_MSG_OPEN_INPUT:\n");
+            [[NSNotificationCenter defaultCenter]
+             postNotificationName:IJKMPMoviePlayerOpenInputNotification
+             object:self];
+            break;
+        }
+        case FFP_MSG_FIND_STREAM_INFO: {
+            NSLog(@"FFP_MSG_FIND_STREAM_INFO:\n");
+            [[NSNotificationCenter defaultCenter]
+             postNotificationName:IJKMPMoviePlayerFindStreamInfoNotification
+             object:self];
+            break;
+        }
+        case FFP_MSG_COMPONENT_OPEN: {
+            NSLog(@"FFP_MSG_COMPONENT_OPEN:\n");
+            [[NSNotificationCenter defaultCenter]
+             postNotificationName:IJKMPMoviePlayerComponentOpenNotification
+             object:self];
+            break;
+        }
+        case FFP_MSG_ACCURATE_SEEK_COMPLETE: {
+            NSLog(@"FFP_MSG_ACCURATE_SEEK_COMPLETE:\n");
+            [[NSNotificationCenter defaultCenter]
+             postNotificationName:IJKMPMoviePlayerAccurateSeekCompleteNotification
+             object:self
+             userInfo:@{IJKMPMoviePlayerDidAccurateSeekCompleteCurPos: @(avmsg->arg1)}];
+            break;
+        }
         default:
             // NSLog(@"unknown FFP_MSG_xxx(%d)\n", avmsg->what);
             break;
@@ -1305,6 +1365,7 @@ static int onInjectOnHttpEvent(IJKFFMoviePlayerController *mpc, int type, void *
 
             if (delegate != nil) {
                 dict[IJKMediaEventAttrKey_host]         = [NSString ijk_stringBeEmptyIfNil:host];
+                dict[IJKMediaEventAttrKey_url]          = [NSString ijk_stringBeEmptyIfNil:monitor.httpUrl];
                 [delegate invoke:type attributes:dict];
             }
             break;
