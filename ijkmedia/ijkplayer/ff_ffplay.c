@@ -139,6 +139,51 @@ int64_t get_valid_channel_layout(int64_t channel_layout, int channels)
 
 static void free_picture(Frame *vp);
 
+struct queue_size {
+    int ms;
+    int packets;
+};
+
+static struct queue_size packet_queue_get_size_ms(PacketQueue *q) {
+
+    MyAVPacketList *q_pkt, *q_pkt1;
+
+    int i = 0;
+
+    int64_t totalDuration = 0;
+
+    int64_t lowestPts = 100000000000;
+    int64_t highestPts = 0;
+
+    for (q_pkt = q->first_pkt; q_pkt; q_pkt = q_pkt1) {
+        q_pkt1 = q_pkt->next;
+        i++;
+
+        uint64_t pts = q_pkt->pkt.pts;
+
+        //printf("Packet %d, pts: %d\n", i, pts);
+
+        if(pts > highestPts)
+            highestPts = pts;
+
+        if(pts < lowestPts)
+            lowestPts = pts;
+
+        totalDuration += q_pkt->pkt.duration;
+    }
+
+    int64_t buffer_ms = (highestPts-lowestPts)/100;
+
+    if(buffer_ms < 0 || buffer_ms > 10000)
+    buffer_ms = 0;
+
+    struct queue_size ret;
+    ret.ms = buffer_ms;
+    ret.packets = i;
+
+    return ret;
+}
+
 /* return < 0 if aborted, 0 if no packet and > 0 if packet.  */
 static int packet_queue_get(PacketQueue *q, AVPacket *pkt, int block, int *serial)
 {
@@ -263,17 +308,6 @@ static int packet_queue_put(PacketQueue *q, AVPacket *pkt)
     SDL_LockMutex(q->mutex);
     ret = packet_queue_put_private(q, pkt);
     SDL_UnlockMutex(q->mutex);
-
-    //printf("nb_packets %d\n", q->nb_packets);
-
-    if (q->nb_packets > 10) {
-
-        printf("nb_packets %d, removing packet from queue!\n", q->nb_packets);
-
-        packet_queue_flush(q);
-        packet_queue_put_private(q, &flush_pkt);
-
-    }
 
     if (pkt != &flush_pkt && ret < 0)
         av_packet_unref(pkt);
@@ -3507,6 +3541,30 @@ static int read_thread(void *arg)
         }
 
         ffp_statistic_l(ffp);
+
+        struct queue_size queue_size_video;
+        queue_size_video = packet_queue_get_size_ms(&is->videoq);
+        struct queue_size queue_size_audio;
+        queue_size_audio = packet_queue_get_size_ms(&is->audioq);
+
+        //printf("QUEUE SIZE: VIDEO: %d ms \t AUDIO: %d ms\n", queue_size_video.ms, queue_size_audio.ms);
+        //printf("QUEUE SIZE: VIDEO: %d packets \t AUDIO: %d packets\n", queue_size_video.packets, queue_size_audio.packets);
+
+        if (queue_size_video.ms > 300) {
+            printf("flushing video queue!\n");
+
+            packet_queue_flush(&is->videoq);
+            packet_queue_put_private(&is->videoq, &flush_pkt);
+
+        }
+
+        if (queue_size_audio.ms > 300) {
+            printf("flushing audio queue!\n");
+
+            packet_queue_flush(&is->audioq);
+            packet_queue_put_private(&is->audioq, &flush_pkt);
+
+        }
 
         if (ffp->packet_buffering) {
             io_tick_counter = SDL_GetTickHR();
