@@ -3016,6 +3016,22 @@ static int is_realtime(AVFormatContext *s)
     return 0;
 }
 
+static double calculatePlaybackSpeed(int diffToRealtime) {
+    double playback_speed = 1.0;
+
+    if(diffToRealtime > 0) {
+        playback_speed = 1.0 + diffToRealtime/1000.0;
+
+        if(playback_speed > 2.0) {
+            playback_speed = 2.0;
+        }
+
+        printf("Playback Speed: %f\n", playback_speed);
+    }
+
+    return playback_speed;
+}
+
 /* this thread gets the stream from the disk or the network */
 static int read_thread(void *arg)
 {
@@ -3554,21 +3570,31 @@ static int read_thread(void *arg)
 
         printf("\nhasVideo: %d\thasAudio: %d\n", hasVideo, hasAudio);
 
-        int diff = queue_size_video.ms - 300;
+        int maxBuffer = 100;
+        int maxAvBufferDesync = 500;
 
         double playback_speed = 1.0;
 
-        if(diff > 0) {
-            playback_speed = 1.0 + diff/1000.0;
+        if(hasVideo && hasAudio) {
 
-            if(playback_speed > 2.0) {
-                playback_speed = 2.0;
+            int diff = queue_size_video.ms - maxBuffer;
+
+            if(queue_size_video.ms-queue_size_audio.ms > maxAvBufferDesync) {
+                // video buffer is much bigger than audio, flush video
+                packet_queue_flush(&is->videoq);
+                packet_queue_put(&is->videoq, &flush_pkt);
+                diff = 0;
+                printf("Flushing video queue\n");
+            } else if(queue_size_audio.ms-queue_size_video.ms > maxAvBufferDesync) {
+                // audio buffer is much bigger than video, flush audio
+                packet_queue_flush(&is->audioq);
+                packet_queue_put(&is->audioq, &flush_pkt);
+                diff = 0;
+                printf("Flushing audio queue\n");
             }
 
-            printf("Playback Speed: %f\n", playback_speed);
-        }
+            playback_speed = calculatePlaybackSpeed(diff);
 
-        if(hasVideo && hasAudio) {
             is->av_sync_type = AV_SYNC_AUDIO_MASTER;
 
             if(diff > 0) {
@@ -3578,7 +3604,14 @@ static int read_thread(void *arg)
             }
 
         } else {
+
+            int diff = queue_size_video.ms-maxBuffer;
+
+            calculatePlaybackSpeed(diff);
+
             is->av_sync_type = AV_SYNC_EXTERNAL_CLOCK;
+
+            playback_speed = calculatePlaybackSpeed(diff);
 
             if(diff > 0) {
                 set_clock_speed(&is->extclk, playback_speed);
