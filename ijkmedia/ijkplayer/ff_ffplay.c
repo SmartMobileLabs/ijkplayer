@@ -3547,23 +3547,51 @@ static int read_thread(void *arg)
         struct queue_size queue_size_audio;
         queue_size_audio = packet_queue_get_size_ms(&is->audioq);
 
-        //printf("QUEUE SIZE: VIDEO: %d ms \t AUDIO: %d ms\n", queue_size_video.ms, queue_size_audio.ms);
-        //printf("QUEUE SIZE: VIDEO: %d packets \t AUDIO: %d packets\n", queue_size_video.packets, queue_size_audio.packets);
+        printf("Queue sizes: Video %d ms\tAudio %d ms", queue_size_video.ms, queue_size_audio.ms);
 
-        if (queue_size_video.ms > 300) {
-            printf("flushing video queue!\n");
+        bool hasAudio = is->audio_st? true : false;
+        bool hasVideo = is->video_st? true : false;
 
-            packet_queue_flush(&is->videoq);
-            packet_queue_put_private(&is->videoq, &flush_pkt);
+        printf("\nhasVideo: %d\thasAudio: %d\n", hasVideo, hasAudio);
+
+        int diff = queue_size_video.ms - 300;
+
+        double playback_speed = 1.0;
+
+        if(diff > 0) {
+            playback_speed = 1.0 + diff/1000.0;
+
+            if(playback_speed > 2.0) {
+                playback_speed = 2.0;
+            }
+
+            printf("Playback Speed: %f\n", playback_speed);
+        }
+
+        if(hasVideo && hasAudio) {
+            is->av_sync_type = AV_SYNC_AUDIO_MASTER;
+
+            if(diff > 0) {
+                ffp_set_playback_rate(ffp, playback_speed);
+            } else {
+                ffp_set_playback_rate(ffp, 1.0);
+            }
+
+        } else {
+            is->av_sync_type = AV_SYNC_EXTERNAL_CLOCK;
+
+            if(diff > 0) {
+                set_clock_speed(&is->extclk, playback_speed);
+            } else {
+                set_clock_speed(&is->extclk, 1.0);
+            }
 
         }
 
-        if (queue_size_audio.ms > 300) {
-            printf("flushing audio queue!\n");
-
-            packet_queue_flush(&is->audioq);
-            packet_queue_put_private(&is->audioq, &flush_pkt);
-
+        if(playback_speed > 1.3) {
+            is->muted = 1;
+        } else {
+            is->muted = 0;
         }
 
         if (ffp->packet_buffering) {
