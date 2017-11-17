@@ -3547,7 +3547,7 @@ static int read_thread(void *arg)
         struct queue_size queue_size_audio;
         queue_size_audio = packet_queue_get_size_ms(&is->audioq);
 
-        printf("Queue sizes: Video %d ms\tAudio %d ms", queue_size_video.ms, queue_size_audio.ms);
+        printf("Queue sizes: Video %d ms/%d pkts\tAudio %d ms/%dpkts", queue_size_video.ms, queue_size_video.packets, queue_size_audio.ms, queue_size_audio.packets);
 
         bool hasAudio = is->audio_st? true : false;
         bool hasVideo = is->video_st? true : false;
@@ -3590,8 +3590,10 @@ static int read_thread(void *arg)
 
         if(playback_speed > 1.3) {
             is->muted = 1;
+            ffp->display_disable = 1;
         } else {
             is->muted = 0;
+            ffp->display_disable = 0;
         }
 
         if (ffp->packet_buffering) {

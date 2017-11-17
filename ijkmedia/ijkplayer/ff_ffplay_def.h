@@ -85,7 +85,7 @@
 #define MAX_QUEUE_SIZE (15 * 1024 * 1024)
 #define MAX_ACCURATE_SEEK_TIMEOUT (5000)
 #ifdef FFP_MERGE
-#define MIN_FRAMES 25
+#define MIN_FRAMES 5
 #endif
 #define DEFAULT_MIN_FRAMES  50000
 #define MIN_MIN_FRAMES      2
