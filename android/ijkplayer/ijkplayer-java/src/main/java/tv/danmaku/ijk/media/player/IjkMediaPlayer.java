@@ -681,6 +681,14 @@ public final class IjkMediaPlayer extends AbstractMediaPlayer {
 
     public native long getRenderedFrames();
 
+    public native long getQueueSizeVideoMs();
+
+    public native long getQueueSizeAudioMs();
+
+    public native boolean hasVideo();
+
+    public native boolean hasAudio();
+
     /**
      * Releases resources associated with this IjkMediaPlayer object. It is
      * considered good practice to call this method when you're done using the

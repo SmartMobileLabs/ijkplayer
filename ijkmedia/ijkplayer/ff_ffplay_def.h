@@ -490,6 +490,14 @@ typedef struct FFStatistic
 {
     int64_t rendered_frames;
 
+    int64_t queue_size_video_ms;
+
+    int64_t queue_size_audio_ms;
+
+    bool hasVideo;
+
+    bool hasAudio;
+
     int64_t vdec_type;
 
     float vfps;

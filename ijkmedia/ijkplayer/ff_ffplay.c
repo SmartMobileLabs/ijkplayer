@@ -3563,36 +3563,27 @@ static int read_thread(void *arg)
         struct queue_size queue_size_audio;
         queue_size_audio = packet_queue_get_size_ms(&is->audioq);
 
-        printf("Queue sizes: Video %d ms/%d pkts\tAudio %d ms/%dpkts", queue_size_video.ms, queue_size_video.packets, queue_size_audio.ms, queue_size_audio.packets);
+        //printf("Queue sizes: Video %d ms/%d pkts\tAudio %d ms/%dpkts", queue_size_video.ms, queue_size_video.packets, queue_size_audio.ms, queue_size_audio.packets);
 
         bool hasAudio = is->audio_st? true : false;
         bool hasVideo = is->video_st? true : false;
 
-        printf("\nhasVideo: %d\thasAudio: %d\n", hasVideo, hasAudio);
+        //printf("\nhasVideo: %d\thasAudio: %d\n", hasVideo, hasAudio);
+
+        // update stats
+        ffp->stat.queue_size_video_ms = queue_size_video.ms;
+        ffp->stat.queue_size_audio_ms = queue_size_audio.ms;
+        ffp->stat.hasVideo = hasVideo;
+        ffp->stat.hasAudio = hasAudio;
+
 
         int maxBuffer = 100;
-        int maxAvBufferDesync = 500;
 
         double playback_speed = 1.0;
 
         if(hasVideo && hasAudio) {
 
             int diff = queue_size_video.ms - maxBuffer;
-
-            if(queue_size_video.ms-queue_size_audio.ms > maxAvBufferDesync) {
-                // video buffer is much bigger than audio, flush video
-                packet_queue_flush(&is->videoq);
-                packet_queue_put(&is->videoq, &flush_pkt);
-                diff = 0;
-                printf("Flushing video queue\n");
-            } else if(queue_size_audio.ms-queue_size_video.ms > maxAvBufferDesync) {
-                // audio buffer is much bigger than video, flush audio
-                packet_queue_flush(&is->audioq);
-                packet_queue_put(&is->audioq, &flush_pkt);
-                diff = 0;
-                printf("Flushing audio queue\n");
-            }
-
             playback_speed = calculatePlaybackSpeed(diff);
 
             is->av_sync_type = AV_SYNC_AUDIO_MASTER;
