@@ -23,13 +23,18 @@ android {
     }
 }
 
-group = 'com.smartmobilelabs.evo.android.playersdk.ijkplayer.java'
-version = '1.0'
+def snapshot = true // don't forget to change the version name for release (if required)
+group = 'com.smartmobilelabs.evo.android.playersdk'
+version = snapshot ? "0.8.4-sml1.0-SNAPSHOT" : "0.8.4-sml1.0"
 
 publishing {
     repositories {
         maven {
-            url rootProject.ext.repoPath
+            url snapshot ? rootProject.ext.snapshotRepositoryPath : rootProject.ext.releaseRepositoryPath
+            credentials {
+                username rootProject.ext.nexusUser
+                password rootProject.ext.nexusPw
+            }
         }
     }
     publications {
