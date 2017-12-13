@@ -46,7 +46,7 @@ void J4AC_android_media_AudioTrack__setSpeed(JNIEnv *env, jobject thiz, jfloat s
     if (J4A_ExceptionCheck__throwAny(env))
         goto fail;
 
-    J4A_ALOGE("%s %f", __func__, (double)speed);
+    //J4A_ALOGE("%s %f", __func__, (double)speed);
     J4AC_android_media_AudioTrack__setPlaybackParams(env, thiz, params);
     if (J4A_ExceptionCheck__throwAny(env))
         goto fail;
@@ -57,7 +57,7 @@ fail:
 
 void J4AC_android_media_AudioTrack__setSpeed__catchAll(JNIEnv *env, jobject thiz, jfloat speed)
 {
-    J4A_ALOGE("%s", __func__);
+    //J4A_ALOGE("%s", __func__);
     J4AC_android_media_AudioTrack__setSpeed(env, thiz, speed);
     if (J4A_ExceptionCheck__catchAll(env))
         return;

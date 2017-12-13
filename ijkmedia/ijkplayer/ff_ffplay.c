@@ -3025,8 +3025,6 @@ static double calculatePlaybackSpeed(int diffToRealtime) {
         if(playback_speed > 2.0) {
             playback_speed = 2.0;
         }
-
-        printf("Playback Speed: %f\n", playback_speed);
     }
 
     return playback_speed;
