@@ -24,7 +24,7 @@ android {
     }
 }
 
-def snapshot = true // don't forget to change the version name for release (if required)
+def snapshot = !project.hasProperty('release') // don't forget to change the version name for release (if required)
 group = 'com.smartmobilelabs.evo.android.playersdk'
 version = snapshot ? "$rootProject.ext.versionName-sml$rootProject.ext.smlVersionName-SNAPSHOT"
         : "$rootProject.ext.versionName-sml$rootProject.ext.smlVersionName"
