@@ -4995,6 +4995,22 @@ int64_t ffp_get_property_int64(FFPlayer *ffp, int id, int64_t default_value)
             if (!ffp)
                 return default_value;
             return ffp->stat.rendered_frames;
+        case FFP_PROP_INT64_STATISTIC_HAS_AUDIO:
+            if (!ffp)
+                return default_value;
+            return ffp->stat.hasAudio ? 1 : 0;
+        case FFP_PROP_INT64_STATISTIC_HAS_VIDEO:
+            if (!ffp)
+                return default_value;
+            return ffp->stat.hasVideo ? 1 : 0;
+        case FFP_PROP_INT64_STATISTIC_QUEUE_SIZE_AUDIO_MS:
+            if (!ffp)
+                return default_value;
+            return ffp->stat.queue_size_audio_ms;
+        case FFP_PROP_INT64_STATISTIC_QUEUE_SIZE_VIDEO_MS:
+            if (!ffp)
+                return default_value;
+            return ffp->stat.queue_size_video_ms;
         default:
             return default_value;
     }
