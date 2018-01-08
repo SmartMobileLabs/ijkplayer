@@ -1,4 +1,5 @@
 apply plugin: 'com.android.library'
+apply plugin: 'digital.wup.android-maven-publish'
 
 android {
     // http://tools.android.com/tech-docs/new-build-system/tips
@@ -20,6 +21,29 @@ android {
     sourceSets.main {
         jniLibs.srcDirs 'src/main/libs'
         jni.srcDirs = [] // This prevents the auto generation of Android.mk
+    }
+}
+
+def snapshot = !project.hasProperty('release') // don't forget to change the version name for release (if required)
+group = 'com.smartmobilelabs.evo.android.playersdk'
+version = snapshot ? "$rootProject.ext.versionName-sml$rootProject.ext.smlVersionName-SNAPSHOT"
+        : "$rootProject.ext.versionName-sml$rootProject.ext.smlVersionName"
+
+publishing {
+    repositories {
+        maven {
+//            url snapshot ? "$rootProject.buildDir/repo/snapshots" : "$rootProject.buildDir/repo/releases"
+            url snapshot ? SmlNexusSnapshotRepo : SmlNexusReleaseRepo
+            credentials {
+                username SmlNexusUser
+                password SmlNexusPw
+            }
+        }
+    }
+    publications {
+        mavenAar(MavenPublication) {
+            from components.android
+        }
     }
 }
 

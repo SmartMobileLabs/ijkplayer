@@ -651,8 +651,20 @@ inline static int getPlayerOption(IJKFFOptionCategory category)
 {
     return _glView.fps;
 }
-- (CGFloat)renderedFrames {
-    return (CGFloat)ijkmp_get_property_int64(_mediaPlayer, FFP_PROP_INT64_STATISTIC_RENDERED_FRAMES, 0);;
+- (int64_t)renderedFrames {
+    return ijkmp_get_property_int64(_mediaPlayer, FFP_PROP_INT64_STATISTIC_RENDERED_FRAMES, 0);
+}
+- (BOOL)hasAudio {
+    return (ijkmp_get_property_int64(_mediaPlayer, FFP_PROP_INT64_STATISTIC_HAS_AUDIO, 0)) == 0 ? NO : YES;
+}
+- (BOOL)hasVideo {
+    return (ijkmp_get_property_int64(_mediaPlayer, FFP_PROP_INT64_STATISTIC_HAS_VIDEO, 0)) == 0 ? NO : YES;
+}
+- (int64_t)queueSizeAudioMs {
+    return ijkmp_get_property_int64(_mediaPlayer, FFP_PROP_INT64_STATISTIC_QUEUE_SIZE_AUDIO_MS, 0);
+}
+- (int64_t)queueSizeVideoMs {
+    return ijkmp_get_property_int64(_mediaPlayer, FFP_PROP_INT64_STATISTIC_QUEUE_SIZE_VIDEO_MS, 0);
 }
 
 inline static NSString *formatedDurationMilli(int64_t duration) {

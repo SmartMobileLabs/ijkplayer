@@ -85,7 +85,7 @@
 #define MAX_QUEUE_SIZE (15 * 1024 * 1024)
 #define MAX_ACCURATE_SEEK_TIMEOUT (5000)
 #ifdef FFP_MERGE
-#define MIN_FRAMES 25
+#define MIN_FRAMES 5
 #endif
 #define DEFAULT_MIN_FRAMES  50000
 #define MIN_MIN_FRAMES      2
@@ -489,6 +489,14 @@ typedef struct FFTrackCacheStatistic
 typedef struct FFStatistic
 {
     int64_t rendered_frames;
+
+    int64_t queue_size_video_ms;
+
+    int64_t queue_size_audio_ms;
+
+    bool hasVideo;
+
+    bool hasAudio;
 
     int64_t vdec_type;
 

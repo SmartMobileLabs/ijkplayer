@@ -272,6 +272,70 @@ LABEL_RETURN:
     return rendered_frames;
 }
 
+static jlong
+IjkMediaPlayer_getQueueSizeVideoMs(JNIEnv *env, jobject thiz)
+{
+    // MPTRACE("%s\n", __func__);
+    IjkMediaPlayer *mp = jni_get_media_player(env, thiz);
+
+    JNI_CHECK_GOTO(mp, env, NULL, "mpjni: getQueueSizeVideoMs: null mp", LABEL_RETURN);
+    jlong queue_size_video_ms = mp->ffplayer->stat.queue_size_video_ms;
+
+LABEL_RETURN:
+    ijkmp_dec_ref_p(&mp);
+    return queue_size_video_ms;
+}
+
+static jlong
+IjkMediaPlayer_getQueueSizeAudioMs(JNIEnv *env, jobject thiz)
+{
+    // MPTRACE("%s\n", __func__);
+    IjkMediaPlayer *mp = jni_get_media_player(env, thiz);
+
+    JNI_CHECK_GOTO(mp, env, NULL, "mpjni: getQueueSizeAudioMs: null mp", LABEL_RETURN);
+    jlong queue_size_audio_ms = mp->ffplayer->stat.queue_size_audio_ms;
+
+LABEL_RETURN:
+    ijkmp_dec_ref_p(&mp);
+    return queue_size_audio_ms;
+}
+
+static jboolean
+IjkMediaPlayer_hasVideo(JNIEnv *env, jobject thiz)
+{
+    // MPTRACE("%s\n", __func__);
+    IjkMediaPlayer *mp = jni_get_media_player(env, thiz);
+
+    JNI_CHECK_GOTO(mp, env, NULL, "mpjni: hasVideo: null mp", LABEL_RETURN);
+    jlong hasVideo = mp->ffplayer->stat.hasVideo;
+
+LABEL_RETURN:
+    ijkmp_dec_ref_p(&mp);
+    if(hasVideo) {
+        return JNI_TRUE;
+    } else {
+        return JNI_FALSE;
+    }
+}
+
+static jboolean
+IjkMediaPlayer_hasAudio(JNIEnv *env, jobject thiz)
+{
+    // MPTRACE("%s\n", __func__);
+    IjkMediaPlayer *mp = jni_get_media_player(env, thiz);
+
+    JNI_CHECK_GOTO(mp, env, NULL, "mpjni: hasAudio: null mp", LABEL_RETURN);
+    jlong hasAudio = mp->ffplayer->stat.hasAudio;
+
+LABEL_RETURN:
+    ijkmp_dec_ref_p(&mp);
+    if(hasAudio) {
+        return JNI_TRUE;
+    } else {
+        return JNI_FALSE;
+    }
+}
+
 static void
 IjkMediaPlayer_prepareAsync(JNIEnv *env, jobject thiz)
 {
@@ -1148,6 +1212,11 @@ static JNINativeMethod g_methods[] = {
     { "_setAndroidIOCallback",  "(Ltv/danmaku/ijk/media/player/misc/IAndroidIO;)V", (void *)IjkMediaPlayer_setAndroidIOCallback },
 
     { "_setVideoSurface",       "(Landroid/view/Surface;)V", (void *) IjkMediaPlayer_setVideoSurface },
+    { "getRenderedFrames",      "()J",      (void *) IjkMediaPlayer_getRenderedFrames },
+    { "getQueueSizeVideoMs",    "()J",      (void *) IjkMediaPlayer_getQueueSizeVideoMs },
+    { "getQueueSizeAudioMs",    "()J",      (void *) IjkMediaPlayer_getQueueSizeAudioMs },
+    { "hasVideo",               "()Z",      (void *) IjkMediaPlayer_hasVideo },
+    { "hasAudio",               "()Z",      (void *) IjkMediaPlayer_hasAudio },
     { "getRenderedFrames",      "()J",      (void *) IjkMediaPlayer_getRenderedFrames },
     { "_prepareAsync",          "()V",      (void *) IjkMediaPlayer_prepareAsync },
     { "_start",                 "()V",      (void *) IjkMediaPlayer_start },
