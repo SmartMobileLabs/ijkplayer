@@ -652,18 +652,33 @@ inline static int getPlayerOption(IJKFFOptionCategory category)
     return _glView.fps;
 }
 - (int64_t)renderedFrames {
+    if (!_mediaPlayer) {
+        return 0;
+    }
     return ijkmp_get_property_int64(_mediaPlayer, FFP_PROP_INT64_STATISTIC_RENDERED_FRAMES, 0);
 }
 - (BOOL)hasAudio {
+    if (!_mediaPlayer) {
+        return NO;
+    }
     return (ijkmp_get_property_int64(_mediaPlayer, FFP_PROP_INT64_STATISTIC_HAS_AUDIO, 0)) == 0 ? NO : YES;
 }
 - (BOOL)hasVideo {
+    if (!_mediaPlayer) {
+        return NO;
+    }
     return (ijkmp_get_property_int64(_mediaPlayer, FFP_PROP_INT64_STATISTIC_HAS_VIDEO, 0)) == 0 ? NO : YES;
 }
 - (int64_t)queueSizeAudioMs {
+    if (!_mediaPlayer) {
+        return 0;
+    }
     return ijkmp_get_property_int64(_mediaPlayer, FFP_PROP_INT64_STATISTIC_QUEUE_SIZE_AUDIO_MS, 0);
 }
 - (int64_t)queueSizeVideoMs {
+    if (!_mediaPlayer) {
+        return 0;
+    }
     return ijkmp_get_property_int64(_mediaPlayer, FFP_PROP_INT64_STATISTIC_QUEUE_SIZE_VIDEO_MS, 0);
 }
 
