@@ -31,7 +31,7 @@ ext {
 
     versionCode = 800400
     versionName = "0.8.4"
-    smlVersionName = "0.1.0"
+    smlVersionName = "0.2.0"
 }
 
 wrapper {
