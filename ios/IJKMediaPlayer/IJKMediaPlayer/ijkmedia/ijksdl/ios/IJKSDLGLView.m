@@ -24,6 +24,8 @@
  */
 
 #import "IJKSDLGLView.h"
+
+#ifndef MD360PlayerMode
 #include "ijksdl/ijksdl_timer.h"
 #include "ijksdl/ios/ijksdl_ios.h"
 #include "ijksdl/ijksdl_gles2.h"
@@ -48,7 +50,7 @@ typedef NS_ENUM(NSInteger, IJKSDLGLViewApplicationState) {
     GLint           _backingHeight;
 
     int             _frameCount;
-    
+
     int64_t         _lastFrameTime;
 
     IJK_GLES2_Renderer *_renderer;
@@ -230,7 +232,7 @@ typedef NS_ENUM(NSInteger, IJKSDLGLViewApplicationState) {
 
     EAGLContext *prevContext = [EAGLContext currentContext];
     [EAGLContext setCurrentContext:_context];
-    
+
     IJK_GLES2_Renderer_reset(_renderer);
     IJK_GLES2_Renderer_freeP(&_renderer);
 
@@ -442,7 +444,7 @@ typedef NS_ENUM(NSInteger, IJKSDLGLViewApplicationState) {
         [self.glActiveLock unlock];
         return NO;
     }
-    
+
     return YES;
 }
 
@@ -662,3 +664,4 @@ typedef NS_ENUM(NSInteger, IJKSDLGLViewApplicationState) {
 }
 
 @end
+#endif
