@@ -1,18 +1,19 @@
 //
-//  MDExt.h
+//  MDIJKSDLGLView.h
 //  IJKMediaPlayer
 //
 //  Created by ashqal on 16/7/14.
 //  Copyright © 2016年 bilibili. All rights reserved.
 //
 
-#define MD360PlayerMode
+// #define MD360PlayerMode
 // #define MDFPS
 
-#ifndef MDExt_h
-#define MDExt_h
+#ifndef MDIJKSDLGLView_h
+#define MDIJKSDLGLView_h
 
 #import <UIKit/UIKit.h>
+#import "IJKSDLGLView.h"
 
 struct MDVideoFrame {
     int w; /**< Read-only */
@@ -36,5 +37,7 @@ typedef struct MDVideoFrame MDVideoFrame;
 - (void) setFrameCallback:(id<MDVideoFrameCallback>) callback;
 @end
 
-
-#endif /* MDExt_h */
+@interface IJKSDLGLView (MDVR) <MDIJKSDLGLView>
+- (void) display360: (SDL_VoutOverlay *) overlay;
+@end
+#endif /* MDIJKSDLGLView_h */

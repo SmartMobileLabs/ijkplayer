@@ -25,11 +25,11 @@
 
 #import "IJKSDLGLView.h"
 
-#ifndef MD360PlayerMode
 #include "ijksdl/ijksdl_timer.h"
 #include "ijksdl/ios/ijksdl_ios.h"
 #include "ijksdl/ijksdl_gles2.h"
 #import "IJKSDLHudViewController.h"
+#import "MDIJKSDLGLView.h"
 
 typedef NS_ENUM(NSInteger, IJKSDLGLViewApplicationState) {
     IJKSDLGLViewApplicationUnknownState = 0,
@@ -40,6 +40,7 @@ typedef NS_ENUM(NSInteger, IJKSDLGLViewApplicationState) {
 @interface IJKSDLGLView()
 @property(atomic,strong) NSRecursiveLock *glActiveLock;
 @property(atomic) BOOL glActivePaused;
+@property (nonatomic,weak) id<MDVideoFrameCallback> callback;
 @end
 
 @implementation IJKSDLGLView {
@@ -346,6 +347,10 @@ typedef NS_ENUM(NSInteger, IJKSDLGLViewApplicationState) {
 
 - (void)display: (SDL_VoutOverlay *) overlay
 {
+    if (overlay != nil && self.callback != nil) {
+        [self display360:overlay];
+        return;
+    }
     if (![self setupGLOnce])
         return;
 
@@ -542,6 +547,9 @@ typedef NS_ENUM(NSInteger, IJKSDLGLViewApplicationState) {
 
 - (UIImage*)snapshot
 {
+    if ([self.callback respondsToSelector:@selector(onFrameAvailable:)]) {
+        return nil;
+    }
     [self lockGLActive];
 
     UIImage *image = [self snapshotInternal];
@@ -639,6 +647,9 @@ typedef NS_ENUM(NSInteger, IJKSDLGLViewApplicationState) {
 #pragma mark IJKFFHudController
 - (void)setHudValue:(NSString *)value forKey:(NSString *)key
 {
+    if ([self.callback respondsToSelector:@selector(onFrameAvailable:)]) {
+        return;
+    }
     if ([[NSThread currentThread] isMainThread]) {
         [_hudViewController setHudValue:value forKey:key];
     } else {
@@ -664,4 +675,3 @@ typedef NS_ENUM(NSInteger, IJKSDLGLViewApplicationState) {
 }
 
 @end
-#endif
