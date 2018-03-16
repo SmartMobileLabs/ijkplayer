@@ -24,10 +24,12 @@
  */
 
 #import "IJKSDLGLView.h"
+
 #include "ijksdl/ijksdl_timer.h"
 #include "ijksdl/ios/ijksdl_ios.h"
 #include "ijksdl/ijksdl_gles2.h"
 #import "IJKSDLHudViewController.h"
+#import "MDIJKSDLGLView.h"
 
 typedef NS_ENUM(NSInteger, IJKSDLGLViewApplicationState) {
     IJKSDLGLViewApplicationUnknownState = 0,
@@ -38,6 +40,7 @@ typedef NS_ENUM(NSInteger, IJKSDLGLViewApplicationState) {
 @interface IJKSDLGLView()
 @property(atomic,strong) NSRecursiveLock *glActiveLock;
 @property(atomic) BOOL glActivePaused;
+@property (nonatomic,weak) id<MDVideoFrameCallback> callback;
 @end
 
 @implementation IJKSDLGLView {
@@ -48,7 +51,7 @@ typedef NS_ENUM(NSInteger, IJKSDLGLViewApplicationState) {
     GLint           _backingHeight;
 
     int             _frameCount;
-    
+
     int64_t         _lastFrameTime;
 
     IJK_GLES2_Renderer *_renderer;
@@ -230,7 +233,7 @@ typedef NS_ENUM(NSInteger, IJKSDLGLViewApplicationState) {
 
     EAGLContext *prevContext = [EAGLContext currentContext];
     [EAGLContext setCurrentContext:_context];
-    
+
     IJK_GLES2_Renderer_reset(_renderer);
     IJK_GLES2_Renderer_freeP(&_renderer);
 
@@ -344,6 +347,10 @@ typedef NS_ENUM(NSInteger, IJKSDLGLViewApplicationState) {
 
 - (void)display: (SDL_VoutOverlay *) overlay
 {
+    if (overlay != nil && self.callback != nil) {
+        [self display360:overlay];
+        return;
+    }
     if (![self setupGLOnce])
         return;
 
@@ -442,7 +449,7 @@ typedef NS_ENUM(NSInteger, IJKSDLGLViewApplicationState) {
         [self.glActiveLock unlock];
         return NO;
     }
-    
+
     return YES;
 }
 
@@ -540,6 +547,9 @@ typedef NS_ENUM(NSInteger, IJKSDLGLViewApplicationState) {
 
 - (UIImage*)snapshot
 {
+    if ([self.callback respondsToSelector:@selector(onFrameAvailable:)]) {
+        return nil;
+    }
     [self lockGLActive];
 
     UIImage *image = [self snapshotInternal];
@@ -637,6 +647,9 @@ typedef NS_ENUM(NSInteger, IJKSDLGLViewApplicationState) {
 #pragma mark IJKFFHudController
 - (void)setHudValue:(NSString *)value forKey:(NSString *)key
 {
+    if ([self.callback respondsToSelector:@selector(onFrameAvailable:)]) {
+        return;
+    }
     if ([[NSThread currentThread] isMainThread]) {
         [_hudViewController setHudValue:value forKey:key];
     } else {
