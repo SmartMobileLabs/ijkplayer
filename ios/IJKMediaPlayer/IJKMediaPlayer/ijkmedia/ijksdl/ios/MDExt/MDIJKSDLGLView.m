@@ -25,6 +25,10 @@ struct SDL_VoutOverlay_Opaque {
 
 - (void) display360: (SDL_VoutOverlay *) overlay{
     
+    if (overlay == nil) {
+        return;
+    }
+    
     MDVideoFrame* frame = malloc(sizeof(MDVideoFrame));
     
     frame -> w = overlay->w;

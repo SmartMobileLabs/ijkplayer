@@ -150,6 +150,7 @@ void IJKFFIOStatCompleteRegister(void (*cb)(const char *url,
 
 - (id)initWithContentURL:(NSURL *)aUrl
              withOptions:(IJKFFOptions *)options
+                   is360:(BOOL)is360
 {
     if (aUrl == nil)
         return nil;
@@ -158,11 +159,13 @@ void IJKFFIOStatCompleteRegister(void (*cb)(const char *url,
     NSString *aUrlString = [aUrl isFileURL] ? [aUrl path] : [aUrl absoluteString];
 
     return [self initWithContentURLString:aUrlString
-                              withOptions:options];
+                              withOptions:options
+                                    is360:is360];
 }
 
 - (id)initWithContentURLString:(NSString *)aUrlString
                    withOptions:(IJKFFOptions *)options
+                         is360:(BOOL)is360
 {
     if (aUrlString == nil)
         return nil;
@@ -202,7 +205,11 @@ void IJKFFIOStatCompleteRegister(void (*cb)(const char *url,
         ijkmp_set_option_int(_mediaPlayer, IJKMP_OPT_CATEGORY_PLAYER, "start-on-prepared", _shouldAutoplay ? 1 : 0);
 
         // init video sink
-        _glView = [[IJKSDLGLView alloc] initWithFrame:[[UIScreen mainScreen] bounds]];
+        if (is360) {
+            _glView = [[IJKSDLGLView alloc] initWithFrame:[[UIScreen mainScreen] bounds] is360:YES];
+        } else {
+            _glView = [[IJKSDLGLView alloc] initWithFrame:[[UIScreen mainScreen] bounds]];
+        }
         _glView.shouldShowHudView = NO;
         _view   = _glView;
         [_glView setHudValue:nil forKey:@"scheme"];

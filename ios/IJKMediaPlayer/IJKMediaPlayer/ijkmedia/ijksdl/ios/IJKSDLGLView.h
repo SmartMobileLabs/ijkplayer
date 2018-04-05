@@ -30,6 +30,7 @@
 @interface IJKSDLGLView : UIView
 
 - (id) initWithFrame:(CGRect)frame;
+- (id) initWithFrame:(CGRect)frame is360:(BOOL)is360;
 - (void) display: (SDL_VoutOverlay *) overlay;
 
 - (UIImage*) snapshot;

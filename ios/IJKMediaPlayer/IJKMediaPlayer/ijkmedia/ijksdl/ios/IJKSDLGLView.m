@@ -68,6 +68,8 @@ typedef NS_ENUM(NSInteger, IJKSDLGLViewApplicationState) {
 
     IJKSDLHudViewController *_hudViewController;
     IJKSDLGLViewApplicationState _applicationState;
+    
+    BOOL _is360;
 }
 
 + (Class) layerClass
@@ -79,6 +81,7 @@ typedef NS_ENUM(NSInteger, IJKSDLGLViewApplicationState) {
 {
     self = [super initWithFrame:frame];
     if (self) {
+        _is360 = NO;
         _tryLockErrorCount = 0;
         _shouldLockWhileBeingMovedToWindow = YES;
         self.glActiveLock = [[NSRecursiveLock alloc] init];
@@ -95,8 +98,19 @@ typedef NS_ENUM(NSInteger, IJKSDLGLViewApplicationState) {
     return self;
 }
 
+- (id) initWithFrame:(CGRect)frame is360:(BOOL)is360
+{
+    self = [super initWithFrame:frame];
+    if (self) {
+        _is360 = is360;
+    }
+    
+    return self;
+}
+
 - (void)willMoveToWindow:(UIWindow *)newWindow
 {
+    if (_is360) return;
     if (!_shouldLockWhileBeingMovedToWindow) {
         [super willMoveToWindow:newWindow];
         return;
@@ -110,6 +124,7 @@ typedef NS_ENUM(NSInteger, IJKSDLGLViewApplicationState) {
 
 - (void)didMoveToWindow
 {
+    if (_is360) return;
     [super didMoveToWindow];
     if (self.window && _didLockedDueToMovedToWindow) {
         [self unlockGLActive];
@@ -119,6 +134,7 @@ typedef NS_ENUM(NSInteger, IJKSDLGLViewApplicationState) {
 
 - (BOOL)setupEAGLContext:(EAGLContext *)context
 {
+    if (_is360) return YES;
     glGenFramebuffers(1, &_framebuffer);
     glGenRenderbuffers(1, &_renderbuffer);
     glBindFramebuffer(GL_FRAMEBUFFER, _framebuffer);
@@ -150,6 +166,7 @@ typedef NS_ENUM(NSInteger, IJKSDLGLViewApplicationState) {
 
 - (BOOL)setupGL
 {
+    if (_is360) return YES;
     if (_didSetupGL)
         return YES;
 
@@ -190,6 +207,7 @@ typedef NS_ENUM(NSInteger, IJKSDLGLViewApplicationState) {
 
 - (BOOL)setupGLOnce
 {
+    if (_is360) return YES;
     if (_didSetupGL)
         return YES;
 
@@ -227,6 +245,7 @@ typedef NS_ENUM(NSInteger, IJKSDLGLViewApplicationState) {
 
 - (void)dealloc
 {
+    if (_is360) return;
     [self lockGLActive];
 
     _didStopGL = YES;
@@ -260,12 +279,14 @@ typedef NS_ENUM(NSInteger, IJKSDLGLViewApplicationState) {
 
 - (void)setScaleFactor:(CGFloat)scaleFactor
 {
+    if (_is360) return;
     _scaleFactor = scaleFactor;
     [self invalidateRenderBuffer];
 }
 
 - (void)layoutSubviews
 {
+    if (_is360) return;
     [super layoutSubviews];
 
     CGRect selfFrame = self.frame;
@@ -283,6 +304,7 @@ typedef NS_ENUM(NSInteger, IJKSDLGLViewApplicationState) {
 
 - (void)setContentMode:(UIViewContentMode)contentMode
 {
+    if (_is360) return;
     [super setContentMode:contentMode];
 
     switch (contentMode) {
@@ -304,6 +326,7 @@ typedef NS_ENUM(NSInteger, IJKSDLGLViewApplicationState) {
 
 - (BOOL)setupRenderer: (SDL_VoutOverlay *) overlay
 {
+    if (_is360) return YES;
     if (overlay == nil)
         return _renderer != nil;
 
@@ -328,6 +351,7 @@ typedef NS_ENUM(NSInteger, IJKSDLGLViewApplicationState) {
 
 - (void)invalidateRenderBuffer
 {
+    if (_is360) return;
     NSLog(@"invalidateRenderBuffer\n");
     [self lockGLActive];
 
@@ -347,7 +371,7 @@ typedef NS_ENUM(NSInteger, IJKSDLGLViewApplicationState) {
 
 - (void)display: (SDL_VoutOverlay *) overlay
 {
-    if (overlay != nil && self.callback != nil) {
+    if (self.callback != nil) {
         [self display360:overlay];
         return;
     }
@@ -356,6 +380,7 @@ typedef NS_ENUM(NSInteger, IJKSDLGLViewApplicationState) {
 
     if (![self tryLockGLActive]) {
         if (0 == (_tryLockErrorCount % 100)) {
+            NSLog(@"IJKSDLGLView:display: callback: %@\n", self.callback);
             NSLog(@"IJKSDLGLView:display: unable to tryLock GL active: %d\n", _tryLockErrorCount);
         }
         _tryLockErrorCount++;
@@ -376,6 +401,7 @@ typedef NS_ENUM(NSInteger, IJKSDLGLViewApplicationState) {
 // NOTE: overlay could be NULl
 - (void)displayInternal: (SDL_VoutOverlay *) overlay
 {
+    if (_is360) return;
     if (![self setupRenderer:overlay]) {
         if (!overlay && !_renderer) {
             NSLog(@"IJKSDLGLView: setupDisplay not ready\n");
@@ -424,16 +450,19 @@ typedef NS_ENUM(NSInteger, IJKSDLGLViewApplicationState) {
 
 - (void) lockGLActive
 {
+    if (_is360) return;
     [self.glActiveLock lock];
 }
 
 - (void) unlockGLActive
 {
+    if (_is360) return;
     [self.glActiveLock unlock];
 }
 
 - (BOOL) tryLockGLActive
 {
+    if (_is360) return YES;
     if (![self.glActiveLock tryLock])
         return NO;
 
@@ -455,6 +484,7 @@ typedef NS_ENUM(NSInteger, IJKSDLGLViewApplicationState) {
 
 - (void)toggleGLPaused:(BOOL)paused
 {
+    if (_is360) return;
     [self lockGLActive];
     if (!self.glActivePaused && paused) {
         if (_context != nil) {
@@ -470,7 +500,7 @@ typedef NS_ENUM(NSInteger, IJKSDLGLViewApplicationState) {
 
 - (void)registerApplicationObservers
 {
-
+    if (_is360) return;
     [[NSNotificationCenter defaultCenter] addObserver:self
                                              selector:@selector(applicationWillEnterForeground)
                                                  name:UIApplicationWillEnterForegroundNotification
@@ -504,6 +534,7 @@ typedef NS_ENUM(NSInteger, IJKSDLGLViewApplicationState) {
 
 - (void)unregisterApplicationObservers
 {
+    if (_is360) return;
     for (NSString *name in _registeredNotifications) {
         [[NSNotificationCenter defaultCenter] removeObserver:self
                                                         name:name
@@ -547,6 +578,7 @@ typedef NS_ENUM(NSInteger, IJKSDLGLViewApplicationState) {
 
 - (UIImage*)snapshot
 {
+    if (_is360) return nil;
     if ([self.callback respondsToSelector:@selector(onFrameAvailable:)]) {
         return nil;
     }
@@ -561,6 +593,7 @@ typedef NS_ENUM(NSInteger, IJKSDLGLViewApplicationState) {
 
 - (UIImage*)snapshotInternal
 {
+    if (_is360) return nil;
     if (isIOS7OrLater()) {
         return [self snapshotInternalOnIOS7AndLater];
     } else {
@@ -570,6 +603,7 @@ typedef NS_ENUM(NSInteger, IJKSDLGLViewApplicationState) {
 
 - (UIImage*)snapshotInternalOnIOS7AndLater
 {
+    if (_is360) return nil;
     if (CGSizeEqualToSize(self.bounds.size, CGSizeZero)) {
         return nil;
     }
@@ -587,6 +621,7 @@ typedef NS_ENUM(NSInteger, IJKSDLGLViewApplicationState) {
 
 - (UIImage*)snapshotInternalOnIOS6AndBefore
 {
+    if (_is360) return nil;
     EAGLContext *prevContext = [EAGLContext currentContext];
     [EAGLContext setCurrentContext:_context];
 
@@ -647,6 +682,7 @@ typedef NS_ENUM(NSInteger, IJKSDLGLViewApplicationState) {
 #pragma mark IJKFFHudController
 - (void)setHudValue:(NSString *)value forKey:(NSString *)key
 {
+    if (_is360) return;
     if ([self.callback respondsToSelector:@selector(onFrameAvailable:)]) {
         return;
     }

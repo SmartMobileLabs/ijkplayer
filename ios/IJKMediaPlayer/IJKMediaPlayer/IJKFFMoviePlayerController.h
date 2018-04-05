@@ -72,10 +72,12 @@ typedef enum IJKLogLevel {
 @interface IJKFFMoviePlayerController : NSObject <IJKMediaPlayback>
 
 - (id)initWithContentURL:(NSURL *)aUrl
-             withOptions:(IJKFFOptions *)options;
+             withOptions:(IJKFFOptions *)options
+                   is360:(BOOL)is360;
 
 - (id)initWithContentURLString:(NSString *)aUrlString
-                   withOptions:(IJKFFOptions *)options;
+                   withOptions:(IJKFFOptions *)options
+                         is360:(BOOL)is360;
 
 - (void)prepareToPlay;
 - (void)play;
