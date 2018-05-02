@@ -3040,8 +3040,8 @@ static double calculatePlaybackSpeed(int diffToRealtime) {
     if(diffToRealtime > 0) {
         playback_speed = 1.0 + diffToRealtime/1000.0;
 
-        if(playback_speed > 2.0) {
-            playback_speed = 2.0;
+        if(playback_speed > 1.1) {
+            playback_speed = 1.1;
         }
     }
 
@@ -3594,7 +3594,7 @@ static int read_thread(void *arg)
         ffp->stat.hasAudio = hasAudio;
 
 
-        int maxBuffer = 100;
+        int maxBuffer = 1000;
 
         double playback_speed = 1.0;
 
