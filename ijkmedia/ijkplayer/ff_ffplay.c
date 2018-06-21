@@ -3594,7 +3594,9 @@ static int read_thread(void *arg)
         ffp->stat.hasAudio = hasAudio;
 
 
-        int maxBuffer = 1000;
+        // cke - has direct impact on latency and stability - should be made smaller
+        //int maxBuffer = 50;
+        int maxBuffer = 100;
 
         double playback_speed = 1.0;
 
