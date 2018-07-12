@@ -759,7 +759,8 @@ IjkMediaPlayer_getMediaMeta(JNIEnv *env, jobject thiz)
     }
 
     size_t count = ijkmeta_get_children_count_l(meta);
-    for (size_t i = 0; i < count; ++i) {
+    size_t i; 
+    for (i = 0; i < count; ++i) {
         IjkMediaMeta *streamRawMeta = ijkmeta_get_child_l(meta, i);
         if (streamRawMeta) {
             jstream_bundle = J4AC_Bundle__Bundle(env);

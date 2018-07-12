@@ -49,7 +49,8 @@ static int convert_sps_pps( const uint8_t *p_buf, size_t i_buf_size,
     p_buf       += 5;
     i_data_size -= 5;
 
-    for ( unsigned int j = 0; j < 2; j++ )
+    unsigned int j;
+    for ( j = 0; j < 2; j++ )
     {
         /* First time is SPS, Second is PPS */
         if( i_data_size < 1 )
@@ -61,7 +62,8 @@ static int convert_sps_pps( const uint8_t *p_buf, size_t i_buf_size,
         i_loop_end = p_buf[0] & (j == 0 ? 0x1f : 0xff);
         p_buf++; i_data_size--;
 
-        for ( unsigned int i = 0; i < i_loop_end; i++)
+        unsigned int i; 
+        for ( i = 0; i < i_loop_end; i++)
         {
             if( i_data_size < 2 )
             {

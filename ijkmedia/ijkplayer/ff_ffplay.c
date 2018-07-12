@@ -2592,7 +2592,8 @@ reload:
 #if defined(__ANDROID__)
         if (ffp->soundtouch_enable && ffp->pf_playback_rate != 1.0f && !is->abort_request) {
             av_fast_malloc(&is->audio_new_buf, &is->audio_new_buf_size, out_size * translate_time);
-            for (int i = 0; i < (resampled_data_size / 2); i++)
+            int i; 
+            for (i = 0; i < (resampled_data_size / 2); i++)
             {
                 is->audio_new_buf[i] = (is->audio_buf1[i * 2] | (is->audio_buf1[i * 2 + 1] << 8));
             }
