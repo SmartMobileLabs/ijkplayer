@@ -144,7 +144,7 @@ struct queue_size {
     int packets;
 };
 
-int cke_debug = 0; 
+int extended_logging = 0; 
 static struct queue_size packet_queue_get_size_ms(PacketQueue *q) {
 
     MyAVPacketList *q_pkt, *q_pkt1;
@@ -1325,7 +1325,7 @@ static void video_refresh(FFPlayer *opaque, double *remaining_time)
     FFPlayer *ffp = opaque;
     VideoState *is = ffp->is;
     double time;
-    if (cke_debug) printf ("calling video_refresh\n");
+    if (extended_logging) printf ("calling video_refresh\n");
     Frame *sp, *sp2;
 
     if (!is->paused && get_master_sync_type(is) == AV_SYNC_EXTERNAL_CLOCK && is->realtime)
@@ -1342,10 +1342,10 @@ static void video_refresh(FFPlayer *opaque, double *remaining_time)
 
     if (is->video_st) {
 retry:
-        if (cke_debug) printf ("retry\n");
+        if (extended_logging) printf ("retry\n");
         if (frame_queue_nb_remaining(&is->pictq) == 0) {
             // nothing to do, no picture to display in the queue
-             if (cke_debug) printf ("no picture to display\n");
+             if (extended_logging) printf ("no picture to display\n");
         } else {
             double last_duration, duration, delay;
             Frame *vp, *lastvp;
@@ -1430,7 +1430,7 @@ retry:
         }
 display:
         /* display picture */
-       if  (cke_debug) printf ("display picture\n");
+       if  (extended_logging) printf ("display picture\n");
         if (!ffp->display_disable && is->force_refresh && is->show_mode == SHOW_MODE_VIDEO && is->pictq.rindex_shown)
             video_display2(ffp);
     }
@@ -1536,7 +1536,7 @@ static int queue_picture(FFPlayer *ffp, AVFrame *src_frame, double pts, double d
     int64_t video_seek_pos = 0;
     int64_t now = 0;
     int64_t deviation = 0;
-    if (cke_debug) printf ("picture start : %d\n",frame_queue_nb_remaining(&is->pictq) );
+    if (extended_logging) printf ("picture start : %d\n",frame_queue_nb_remaining(&is->pictq) );
     if (ffp->enable_accurate_seek && is->video_accurate_seek_req && !is->seek_req) {
         if (!isnan(pts)) {
             video_seek_pos = is->seek_pos;
@@ -1641,7 +1641,7 @@ static int queue_picture(FFPlayer *ffp, AVFrame *src_frame, double pts, double d
     }
 
     /* if the frame is not skipped, then display it */
-    if (cke_debug) printf ("vp->bmp %d\n",(int)vp->bmp);
+    if (extended_logging) printf ("vp->bmp %d\n",(int)vp->bmp);
     if (vp->bmp) {
         /* get a pointer on the bitmap */
         SDL_VoutLockYUVOverlay(vp->bmp);
@@ -1682,7 +1682,7 @@ static int queue_picture(FFPlayer *ffp, AVFrame *src_frame, double pts, double d
             is->viddec.first_frame_decoded = 1;
         }
     }
-    if (cke_debug) printf ("picture end : %d\n",frame_queue_nb_remaining(&is->pictq) );
+    if (extended_logging) printf ("picture end : %d\n",frame_queue_nb_remaining(&is->pictq) );
     return 0;
 }
 
@@ -1696,12 +1696,12 @@ static int get_video_frame(FFPlayer *ffp, AVFrame *frame)
      
     if ((got_picture = decoder_decode_frame(ffp, &is->viddec, frame, NULL)) < 0)
     {
-        if (cke_debug) printf ("no decoded frame\n");
+        if (extended_logging) printf ("no decoded frame\n");
         return -1;
     }
     else
     {
-        if (cke_debug) printf ("decoded frame received\n");
+        if (extended_logging) printf ("decoded frame received\n");
     }
 
     if (got_picture) {
@@ -1727,7 +1727,7 @@ static int get_video_frame(FFPlayer *ffp, AVFrame *frame)
                     } else {
                         ffp->stat.drop_frame_count++;
                         ffp->stat.drop_frame_rate = (float)(ffp->stat.drop_frame_count) / (float)(ffp->stat.decode_frame_count);
-                        if (cke_debug) printf ("dropping frame\n");
+                        if (extended_logging) printf ("dropping frame\n");
                         av_frame_unref(frame);
                         got_picture = 0;
                     }
@@ -2220,9 +2220,9 @@ static int ffplay_video_thread(void *arg)
     }
 
     for (;;) {
-        if (cke_debug) printf ("get decoded video frame start\n");
+        if (extended_logging) printf ("get decoded video frame start\n");
         ret = get_video_frame(ffp, frame);
-        if (cke_debug) printf ("get_video_frame_returns %d\n",ret);
+        if (extended_logging) printf ("get_video_frame_returns %d\n",ret);
         if (ret < 0)
             goto the_end;
         if (!ret)
@@ -2325,7 +2325,7 @@ static int ffplay_video_thread(void *arg)
                 is->frame_last_filter_delay = 0;
             tb = av_buffersink_get_time_base(filt_out);
 #endif
-            if (cke_debug) printf ("queue picture\n");
+            if (extended_logging) printf ("queue picture\n");
             duration = (frame_rate.num && frame_rate.den ? av_q2d((AVRational){frame_rate.den, frame_rate.num}) : 0);
             pts = (frame->pts == AV_NOPTS_VALUE) ? NAN : frame->pts * av_q2d(tb);
             ret = queue_picture(ffp, frame, pts, duration, av_frame_get_pkt_pos(frame), is->viddec.pkt_serial);
@@ -3579,7 +3579,10 @@ static int read_thread(void *arg)
         struct queue_size queue_size_audio;
         queue_size_audio = packet_queue_get_size_ms(&is->audioq);
 
-        printf("Queue sizes2: Video %d ms/%d pkts\tAudio %d ms/%dpkts, pictq size %d", queue_size_video.ms, queue_size_video.packets, queue_size_audio.ms, queue_size_audio.packets,frame_queue_nb_remaining(&is->pictq) );
+        if (extended_logging) 
+            printf("Queue sizes2: Video %d ms/%d pkts\tAudio %d ms/%dpkts, pictq size %d",
+                    queue_size_video.ms, queue_size_video.packets, queue_size_audio.ms, 
+                    queue_size_audio.packets,frame_queue_nb_remaining(&is->pictq) );
 
 
         bool hasAudio = is->audio_st? true : false;
@@ -4572,7 +4575,7 @@ void ffp_frame_queue_push(FrameQueue *f)
 int ffp_queue_picture(FFPlayer *ffp, AVFrame *src_frame, double pts, double duration, int64_t pos, int serial)
 {
     int ret =  queue_picture(ffp, src_frame, pts, duration, pos, serial);
-    if (cke_debug) printf ("ffp_queue_picture %d\n",ret);
+    if (extended_logging) printf ("ffp_queue_picture %d\n",ret);
     return ret; 
 }
 
