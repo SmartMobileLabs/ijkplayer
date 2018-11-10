@@ -1,4 +1,5 @@
 // Top-level build file where you can add configuration options common to all sub-projects/modules.
+apply from: "$rootProject.projectDir/../../../EVO_Android_Player_SDK.properties"
 
 buildscript {
     repositories {
@@ -31,7 +32,7 @@ ext {
 
     versionCode = 800400
     versionName = "0.8.4"
-    smlVersionName = "0.2.0"
+    smlVersionName = EvoAndroidIjkSmlVersionName
 }
 
 wrapper {
