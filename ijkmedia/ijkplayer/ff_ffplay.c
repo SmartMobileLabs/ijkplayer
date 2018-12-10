@@ -3579,7 +3579,12 @@ static int read_thread(void *arg)
         struct queue_size queue_size_audio;
         queue_size_audio = packet_queue_get_size_ms(&is->audioq);
 
-        printf("Queue sizes2: Video %d ms/%d pkts\tAudio %d ms/%dpkts, pictq size %d", queue_size_video.ms, queue_size_video.packets, queue_size_audio.ms, queue_size_audio.packets,frame_queue_nb_remaining(&is->pictq) );
+        if (cke_debug)
+                printf("Queue sizes2: Video %d ms/%d pkts\tAudio %d ms/%dpkts, pictq size %d", queue_size_video.ms, 
+                             queue_size_video.packets, 
+                             queue_size_audio.ms, 
+                             queue_size_audio.packets, 
+                             frame_queue_nb_remaining(&is->pictq) );
 
 
         bool hasAudio = is->audio_st? true : false;
