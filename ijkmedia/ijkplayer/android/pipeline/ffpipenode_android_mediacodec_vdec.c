@@ -120,6 +120,7 @@ typedef struct IJKFF_Pipenode_Opaque {
     volatile bool             abort;
 } IJKFF_Pipenode_Opaque;
 
+extern int cke_debug; 
 static SDL_AMediaCodec *create_codec_l(JNIEnv *env, IJKFF_Pipenode *node)
 {
     IJKFF_Pipenode_Opaque        *opaque   = node->opaque;
@@ -410,6 +411,7 @@ static int feed_input_buffer2(JNIEnv *env, IJKFF_Pipenode *node, int64_t timeUs,
         goto fail;
     }
 
+    if(cke_debug) av_log(ffp, AV_LOG_DEBUG, "feed_inputbuffer2 %d\n", (int)(!d->packet_pending || d->queue->serial != d->pkt_serial));
     if (!d->packet_pending || d->queue->serial != d->pkt_serial) {
 #if AMC_USE_AVBITSTREAM_FILTER
 #else
@@ -655,6 +657,11 @@ static int feed_input_buffer(JNIEnv *env, IJKFF_Pipenode *node, int64_t timeUs, 
         goto fail;
     }
 
+    
+    if (cke_debug) av_log(ffp, AV_LOG_DEBUG, "feed_inputbuffer %d: packet_pending: %d, serial %d, pkt_serial %d\n", 
+             (int)(!d->packet_pending || d->queue->serial != d->pkt_serial),
+            (int)d->packet_pending, (int)d->queue->serial,(int)d->pkt_serial
+    );
     if (!d->packet_pending || d->queue->serial != d->pkt_serial) {
 #if AMC_USE_AVBITSTREAM_FILTER
 #else
@@ -1576,6 +1583,8 @@ static int func_run_sync(IJKFF_Pipenode *node)
                     }
                 }
             }
+            if (cke_debug) av_log(ffp, AV_LOG_DEBUG, "func_sync - ffp_queue_picture\n");
+
             ret = ffp_queue_picture(ffp, frame, pts, duration, av_frame_get_pkt_pos(frame), is->viddec.pkt_serial);
             if (ret) {
                 if (frame->opaque)

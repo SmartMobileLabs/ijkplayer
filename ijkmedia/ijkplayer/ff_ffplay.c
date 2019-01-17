@@ -144,6 +144,7 @@ struct queue_size {
     int packets;
 };
 
+int cke_debug = 0; 
 static struct queue_size packet_queue_get_size_ms(PacketQueue *q) {
 
     MyAVPacketList *q_pkt, *q_pkt1;
@@ -1324,7 +1325,7 @@ static void video_refresh(FFPlayer *opaque, double *remaining_time)
     FFPlayer *ffp = opaque;
     VideoState *is = ffp->is;
     double time;
-
+    if (cke_debug) printf ("calling video_refresh\n");
     Frame *sp, *sp2;
 
     if (!is->paused && get_master_sync_type(is) == AV_SYNC_EXTERNAL_CLOCK && is->realtime)
@@ -1341,8 +1342,10 @@ static void video_refresh(FFPlayer *opaque, double *remaining_time)
 
     if (is->video_st) {
 retry:
+        if (cke_debug) printf ("retry\n");
         if (frame_queue_nb_remaining(&is->pictq) == 0) {
             // nothing to do, no picture to display in the queue
+             if (cke_debug) printf ("no picture to display\n");
         } else {
             double last_duration, duration, delay;
             Frame *vp, *lastvp;
@@ -1377,7 +1380,6 @@ retry:
             is->frame_timer += delay;
             if (delay > 0 && time - is->frame_timer > AV_SYNC_THRESHOLD_MAX)
                 is->frame_timer = time;
-
             SDL_LockMutex(is->pictq.mutex);
             if (!isnan(vp->pts))
                 update_video_pts(is, vp->pts, vp->pos, vp->serial);
@@ -1428,6 +1430,7 @@ retry:
         }
 display:
         /* display picture */
+       if  (cke_debug) printf ("display picture\n");
         if (!ffp->display_disable && is->force_refresh && is->show_mode == SHOW_MODE_VIDEO && is->pictq.rindex_shown)
             video_display2(ffp);
     }
@@ -1533,7 +1536,7 @@ static int queue_picture(FFPlayer *ffp, AVFrame *src_frame, double pts, double d
     int64_t video_seek_pos = 0;
     int64_t now = 0;
     int64_t deviation = 0;
-
+    if (cke_debug) printf ("picture start : %d\n",frame_queue_nb_remaining(&is->pictq) );
     if (ffp->enable_accurate_seek && is->video_accurate_seek_req && !is->seek_req) {
         if (!isnan(pts)) {
             video_seek_pos = is->seek_pos;
@@ -1638,6 +1641,7 @@ static int queue_picture(FFPlayer *ffp, AVFrame *src_frame, double pts, double d
     }
 
     /* if the frame is not skipped, then display it */
+    if (cke_debug) printf ("vp->bmp %d\n",(int)vp->bmp);
     if (vp->bmp) {
         /* get a pointer on the bitmap */
         SDL_VoutLockYUVOverlay(vp->bmp);
@@ -1678,6 +1682,7 @@ static int queue_picture(FFPlayer *ffp, AVFrame *src_frame, double pts, double d
             is->viddec.first_frame_decoded = 1;
         }
     }
+    if (cke_debug) printf ("picture end : %d\n",frame_queue_nb_remaining(&is->pictq) );
     return 0;
 }
 
@@ -1685,10 +1690,19 @@ static int get_video_frame(FFPlayer *ffp, AVFrame *frame)
 {
     VideoState *is = ffp->is;
     int got_picture;
+    int ret; 
 
     ffp_video_statistic_l(ffp);
+     
     if ((got_picture = decoder_decode_frame(ffp, &is->viddec, frame, NULL)) < 0)
+    {
+        if (cke_debug) printf ("no decoded frame\n");
         return -1;
+    }
+    else
+    {
+        if (cke_debug) printf ("decoded frame received\n");
+    }
 
     if (got_picture) {
         double dpts = NAN;
@@ -1713,6 +1727,7 @@ static int get_video_frame(FFPlayer *ffp, AVFrame *frame)
                     } else {
                         ffp->stat.drop_frame_count++;
                         ffp->stat.drop_frame_rate = (float)(ffp->stat.drop_frame_count) / (float)(ffp->stat.decode_frame_count);
+                        if (cke_debug) printf ("dropping frame\n");
                         av_frame_unref(frame);
                         got_picture = 0;
                     }
@@ -2205,7 +2220,9 @@ static int ffplay_video_thread(void *arg)
     }
 
     for (;;) {
+        if (cke_debug) printf ("get decoded video frame start\n");
         ret = get_video_frame(ffp, frame);
+        if (cke_debug) printf ("get_video_frame_returns %d\n",ret);
         if (ret < 0)
             goto the_end;
         if (!ret)
@@ -2308,6 +2325,7 @@ static int ffplay_video_thread(void *arg)
                 is->frame_last_filter_delay = 0;
             tb = av_buffersink_get_time_base(filt_out);
 #endif
+            if (cke_debug) printf ("queue picture\n");
             duration = (frame_rate.num && frame_rate.den ? av_q2d((AVRational){frame_rate.den, frame_rate.num}) : 0);
             pts = (frame->pts == AV_NOPTS_VALUE) ? NAN : frame->pts * av_q2d(tb);
             ret = queue_picture(ffp, frame, pts, duration, av_frame_get_pkt_pos(frame), is->viddec.pkt_serial);
@@ -3022,8 +3040,8 @@ static double calculatePlaybackSpeed(int diffToRealtime) {
     if(diffToRealtime > 0) {
         playback_speed = 1.0 + diffToRealtime/1000.0;
 
-        if(playback_speed > 2.0) {
-            playback_speed = 2.0;
+        if(playback_speed > 1.1) {
+            playback_speed = 1.1;
         }
     }
 
@@ -3561,7 +3579,13 @@ static int read_thread(void *arg)
         struct queue_size queue_size_audio;
         queue_size_audio = packet_queue_get_size_ms(&is->audioq);
 
-        //printf("Queue sizes: Video %d ms/%d pkts\tAudio %d ms/%dpkts", queue_size_video.ms, queue_size_video.packets, queue_size_audio.ms, queue_size_audio.packets);
+        if (cke_debug)
+                printf("Queue sizes2: Video %d ms/%d pkts\tAudio %d ms/%dpkts, pictq size %d", queue_size_video.ms, 
+                             queue_size_video.packets, 
+                             queue_size_audio.ms, 
+                             queue_size_audio.packets, 
+                             frame_queue_nb_remaining(&is->pictq) );
+
 
         bool hasAudio = is->audio_st? true : false;
         bool hasVideo = is->video_st? true : false;
@@ -3575,6 +3599,8 @@ static int read_thread(void *arg)
         ffp->stat.hasAudio = hasAudio;
 
 
+        // cke - has direct impact on latency and stability - should be made smaller
+        //int maxBuffer = 50;
         int maxBuffer = 100;
 
         double playback_speed = 1.0;
@@ -4550,7 +4576,9 @@ void ffp_frame_queue_push(FrameQueue *f)
 
 int ffp_queue_picture(FFPlayer *ffp, AVFrame *src_frame, double pts, double duration, int64_t pos, int serial)
 {
-    return queue_picture(ffp, src_frame, pts, duration, pos, serial);
+    int ret =  queue_picture(ffp, src_frame, pts, duration, pos, serial);
+    if (cke_debug) printf ("ffp_queue_picture %d\n",ret);
+    return ret; 
 }
 
 int ffp_get_master_sync_type(VideoState *is)
