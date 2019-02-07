@@ -969,6 +969,19 @@ inline static void post_event2(JNIEnv *env, jobject weak_this, int what, int arg
     // MPTRACE("post_event2()=void");
 }
 
+inline static void post_eventTimeStamp(JNIEnv *env, jobject weak_this, int what, int arg1, int arg2, void  * o)
+{
+              struct MediaTimestamp * foo =  (struct MediaTimestamp * ) o; 
+              if (foo)
+              {
+                   MPTRACE ("cke3: Timestamp : measurement_time_us = %lld, start_time_realtime_us=%lld, pts_us = %lld\n",
+                                   (long long ) foo->measurement_time_us,
+                                   (long long ) foo->start_time_realtime_us,
+                                   (long long ) foo->pts_us);
+                   //free(foo);
+              }
+}
+
 static void message_loop_n(JNIEnv *env, IjkMediaPlayer *mp)
 {
     jobject weak_thiz = (jobject) ijkmp_get_weak_thiz(mp);
@@ -1075,6 +1088,11 @@ static void message_loop_n(JNIEnv *env, IjkMediaPlayer *mp)
             }
             else {
                 post_event2(env, weak_thiz, MEDIA_TIMED_TEXT, 0, 0, NULL);
+            }
+            break;
+        case FFP_MSG_VIDEO_TIMESTAMP:
+            if (msg.obj) {
+                post_eventTimeStamp(env, weak_thiz, MEDIA_VIDEO_TIMESTAMP, 0, 0, msg.obj);
             }
             break;
         case FFP_MSG_GET_IMG_STATE:

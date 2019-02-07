@@ -52,6 +52,7 @@
 #define FFP_MSG_GET_IMG_STATE               1000    /* arg1 = timestamp, arg2 = result code, obj = file name*/
 
 #define FFP_MSG_VIDEO_DECODER_OPEN          10001
+#define FFP_MSG_VIDEO_TIMESTAMP             10002
 
 #define FFP_REQ_START                       20001
 #define FFP_REQ_PAUSE                       20002
@@ -108,5 +109,12 @@
 #define FFP_PROP_INT64_STATISTIC_QUEUE_SIZE_AUDIO_MS    20213
 #define FFP_PROP_INT64_STATISTIC_HAS_VIDEO              20214
 #define FFP_PROP_INT64_STATISTIC_HAS_AUDIO              20215
+
+
+struct MediaTimestamp {
+   int64_t measurement_time_us;
+   int64_t start_time_realtime_us;
+   int64_t pts_us; 
+};
 
 #endif
