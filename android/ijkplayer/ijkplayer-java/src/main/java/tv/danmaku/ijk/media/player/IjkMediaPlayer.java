@@ -77,7 +77,7 @@ public final class IjkMediaPlayer extends AbstractMediaPlayer {
     private static final int MEDIA_TIMED_TEXT = 99;
     private static final int MEDIA_ERROR = 100;
     private static final int MEDIA_INFO = 200;
-
+    private static final int MEDIA_VIDEO_TIMESTAMP = 201;
     protected static final int MEDIA_SET_VIDEO_SAR = 10001;
 
     //----------------------------------------
@@ -1037,6 +1037,13 @@ public final class IjkMediaPlayer extends AbstractMediaPlayer {
                 player.notifyOnInfo(msg.arg1, msg.arg2);
                 // No real default action so far.
                 return;
+            case MEDIA_VIDEO_TIMESTAMP:
+                    IjkStreamTimeInfo foo = (IjkStreamTimeInfo)msg.obj;
+                DebugLog.i(TAG, "cke3: measurement_time_us " + foo.measurement_time_us + " \n");
+
+                    //player.notifyOnInfo(msg.arg1, msg.arg2);
+                    // No real default action so far.
+                    return;
             case MEDIA_TIMED_TEXT:
                 if (msg.obj == null) {
                     player.notifyOnTimedText(null);
