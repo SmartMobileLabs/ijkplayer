@@ -58,6 +58,9 @@ typedef struct player_fields_t {
     pthread_mutex_t mutex;
     jclass clazz;
 } player_fields_t;
+
+static jclass timeinfo_clazz = 0;
+
 static player_fields_t g_clazz;
 
 static int inject_callback(void *opaque, int type, void *data, size_t data_size);
@@ -974,11 +977,13 @@ inline static void post_eventTimeStamp(JNIEnv *env, jobject weak_this, int what,
               struct MediaTimestamp * foo =  (struct MediaTimestamp * ) o; 
               if (foo)
               {
-                   MPTRACE ("cke3: Timestamp : measurement_time_us = %lld, start_time_realtime_us=%lld, pts_us = %lld\n",
-                                   (long long ) foo->measurement_time_us,
-                                   (long long ) foo->start_time_realtime_us,
-                                   (long long ) foo->pts_us);
-                   //free(foo);
+
+
+                        MPTRACE ("cke3: Timestamp : measurement_time_us = %lld, start_time_realtime_us=%lld, pts_us = %lld jclass=%p\n",
+                           (long long ) foo->measurement_time_us,
+                           (long long ) foo->start_time_realtime_us,
+                           (long long ) foo->pts_us, timeinfo_clazz);
+
               }
 }
 
@@ -1288,6 +1293,8 @@ JNIEXPORT jint JNI_OnLoad(JavaVM *vm, void *reserved)
 
     // FindClass returns LocalReference
     IJK_FIND_JAVA_CLASS(env, g_clazz.clazz, JNI_CLASS_IJKPLAYER);
+    IJK_FIND_JAVA_CLASS(env, timeinfo_clazz,"tv/danmaku/ijk/media/player/IjkStreamTimeInfo");
+
     (*env)->RegisterNatives(env, g_clazz.clazz, g_methods, NELEM(g_methods) );
 
     ijkmp_global_init();

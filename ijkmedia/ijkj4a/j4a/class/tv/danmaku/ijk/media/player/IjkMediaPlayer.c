@@ -368,6 +368,7 @@ int J4A_loadClass__J4AC_tv_danmaku_ijk_media_player_IjkMediaPlayer(JNIEnv *env)
     if (class_J4AC_tv_danmaku_ijk_media_player_IjkMediaPlayer.method_postEventFromNative == NULL)
         goto fail;
 
+
     class_id = class_J4AC_tv_danmaku_ijk_media_player_IjkMediaPlayer.id;
     name     = "onSelectCodec";
     sign     = "(Ljava/lang/Object;Ljava/lang/String;II)Ljava/lang/String;";
