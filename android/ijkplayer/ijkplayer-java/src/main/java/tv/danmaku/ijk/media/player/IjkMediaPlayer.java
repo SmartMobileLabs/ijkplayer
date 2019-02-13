@@ -1038,9 +1038,9 @@ public final class IjkMediaPlayer extends AbstractMediaPlayer {
                 // No real default action so far.
                 return;
             case MEDIA_VIDEO_TIMESTAMP:
-                    IjkStreamTimeInfo foo = (IjkStreamTimeInfo)msg.obj;
-                DebugLog.i(TAG, "cke3: measurement_time_us " + foo.measurement_time_us + " \n");
-
+                //IjkStreamTimeInfo foo = (IjkStreamTimeInfo)msg.obj;
+                //DebugLog.i(TAG, "cke3: measurement_time_us " + foo.measurement_time_us + " \n");
+                    player.notifyOnInfo(msg.arg1, msg.obj);
                     //player.notifyOnInfo(msg.arg1, msg.arg2);
                     // No real default action so far.
                     return;

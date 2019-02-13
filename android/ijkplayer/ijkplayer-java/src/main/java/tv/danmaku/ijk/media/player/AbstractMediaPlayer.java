@@ -110,6 +110,10 @@ public abstract class AbstractMediaPlayer implements IMediaPlayer {
         return mOnInfoListener != null && mOnInfoListener.onInfo(this, what, extra);
     }
 
+    protected final boolean notifyOnInfo(int what, Object obj) {
+        return mOnInfoListener != null && mOnInfoListener.onInfo(this, what, obj);
+    }
+
     protected final void notifyOnTimedText(IjkTimedText text) {
         if (mOnTimedTextListener != null)
             mOnTimedTextListener.onTimedText(this, text);

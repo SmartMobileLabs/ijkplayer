@@ -1104,7 +1104,7 @@ static void message_loop_n(JNIEnv *env, IjkMediaPlayer *mp)
             break;
         case FFP_MSG_VIDEO_TIMESTAMP:
             if (msg.obj) {
-                post_eventTimeStamp(env, weak_thiz, MEDIA_VIDEO_TIMESTAMP, 0, 0, msg.obj);
+                post_eventTimeStamp(env, weak_thiz, MEDIA_VIDEO_TIMESTAMP, MEDIA_INFO_VIDEO_TIMESTAMP, 0, msg.obj);
             }
             break;
         case FFP_MSG_GET_IMG_STATE:
