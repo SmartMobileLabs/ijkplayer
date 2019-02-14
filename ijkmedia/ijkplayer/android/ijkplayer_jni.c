@@ -979,16 +979,16 @@ inline static void post_eventTimeStamp(JNIEnv *env, jobject weak_this, int what,
               {
 
 
-                        MPTRACE ("cke3: Timestamp : measurement_time_us = %lld, start_time_realtime_us=%lld, pts_us = %lld jclass=%p\n",
-                           (long long ) foo->measurement_time_us,
-                           (long long ) foo->start_time_realtime_us,
-                           (long long ) foo->pts_us, timeinfo_clazz);
+                        //MPTRACE ("cke3: Timestamp : measurement_time_us = %lld, start_time_realtime_us=%lld, pts_us = %lld jclass=%p\n",
+                        //   (long long ) foo->measurement_time_us,
+                        //   (long long ) foo->start_time_realtime_us,
+                        //   (long long ) foo->pts_us, timeinfo_clazz);
                        jmethodID constructor = (*env)->GetMethodID(env, timeinfo_clazz, "<init>", "(JJJ)V");
                        jobject object = (*env)->NewObject(env,timeinfo_clazz, constructor, foo->measurement_time_us,foo->start_time_realtime_us,foo->pts_us); 
                        J4AC_IjkMediaPlayer__postEventFromNative(env, weak_this, what, arg1, arg2, object);
                        
 //    (*env)->DeleteGlobalRef(env, weak_thiz);
-                       MPTRACE ("cke3: Timestamp : object=%p\n",object);
+                       // MPTRACE ("cke3: Timestamp : object=%p\n",object);
        
 
               }

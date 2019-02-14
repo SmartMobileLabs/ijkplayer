@@ -952,6 +952,7 @@ static void video_image_display2(FFPlayer *ffp)
                   struct MediaTimestamp foo; 
                   foo.measurement_time_us = av_gettime_relative();
                   foo.start_time_realtime_us = is->ic->start_time_realtime; 
+                  if (cke_debug) av_log(NULL, AV_LOG_INFO, "cke4 : time %lld\n", (long long )is->ic->start_time_realtime);
                   foo.pts_us = (int64_t) ( is->vidclk.pts * 1000000 ) ; 
                   // foo is copied into the message - do not do memory handling
                   ffp_notify_msg4(ffp, FFP_MSG_VIDEO_TIMESTAMP, 0, 0, &foo, sizeof(foo));
