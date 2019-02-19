@@ -952,8 +952,17 @@ static void video_image_display2(FFPlayer *ffp)
                   struct MediaTimestamp foo; 
                   foo.measurement_time_us = av_gettime_relative();
                   foo.start_time_realtime_us = is->ic->start_time_realtime; 
-                  if (cke_debug) av_log(NULL, AV_LOG_INFO, "cke4 : time %lld\n", (long long )is->ic->start_time_realtime);
                   foo.pts_us = (int64_t) ( is->vidclk.pts * 1000000 ) ; 
+                  if (cke_debug)
+                  {
+                      int64_t pts_from_pkt = (int64_t )(vp->pts * 1000000);
+                      int64_t pts_from_avframe = vp->frame->pts;
+                      int64_t pts_from_avframe1 = vp->frame->pkt_pts;
+                      printf( "cke4 : time %lld, pts %lld  pts_from_vp %lld pts_from_AVFrame3 %lld pts_from_AVFrame2 %lld    \n",
+                                  (long long )is->ic->start_time_realtime,
+                                  (long long) pts_from_pkt, (long long)foo.pts_us, (long long) pts_from_avframe, (long long ) pts_from_avframe1
+                             );
+                  }
                   // foo is copied into the message - do not do memory handling
                   ffp_notify_msg4(ffp, FFP_MSG_VIDEO_TIMESTAMP, 0, 0, &foo, sizeof(foo));
         }
@@ -3614,7 +3623,7 @@ static int read_thread(void *arg)
 
         // cke - has direct impact on latency and stability - should be made smaller
         //int maxBuffer = 50;
-        int maxBuffer = 100;
+        int maxBuffer = 20;
 
         double playback_speed = 1.0;
 
