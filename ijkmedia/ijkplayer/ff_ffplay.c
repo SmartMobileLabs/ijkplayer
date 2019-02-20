@@ -3623,13 +3623,15 @@ static int read_thread(void *arg)
 
         // cke - has direct impact on latency and stability - should be made smaller
         //int maxBuffer = 50;
-        int maxBuffer = 20;
+        int maxBuffer = 50;
 
         double playback_speed = 1.0;
 
         if(hasVideo && hasAudio) {
 
             int diff = queue_size_video.ms - maxBuffer;
+            int diffAudio = queue_size_audio.ms - maxBuffer;
+            diff = diff > diffAudio ? diff : diffAudio; 
             playback_speed = calculatePlaybackSpeed(diff);
 
             is->av_sync_type = AV_SYNC_AUDIO_MASTER;
