@@ -3060,7 +3060,7 @@ static double calculatePlaybackSpeed(int diffToRealtime) {
     double playback_speed = 1.0;
 
     if(diffToRealtime > 0) {
-        playback_speed = 1.0 + diffToRealtime/1000.0;
+        playback_speed = 1.0 + 2*diffToRealtime/1000.0;
 
         if(playback_speed > 1.1) {
             playback_speed = 1.1;
@@ -3622,22 +3622,22 @@ static int read_thread(void *arg)
 
 
         // cke - has direct impact on latency and stability - should be made smaller
-        //int maxBuffer = 50;
         int maxBuffer = 50;
+        //int maxBuffer = 20;
 
         double playback_speed = 1.0;
 
         if(hasVideo && hasAudio) {
 
-            int diff = queue_size_video.ms - maxBuffer;
+            int diffVideo = queue_size_video.ms - maxBuffer;
             int diffAudio = queue_size_audio.ms - maxBuffer;
-            diff = diff > diffAudio ? diff : diffAudio; 
+            int diff = diffVideo > diffAudio ? diffVideo : diffAudio; 
             playback_speed = calculatePlaybackSpeed(diff);
 
             is->av_sync_type = AV_SYNC_AUDIO_MASTER;
-
+            if (cke_debug) printf ("cke: diff= %d, diffaudio = %d diffVideo %d\n",diff,diffAudio,diffVideo);
             if(diff > 0) {
-                ffp_set_playback_rate(ffp, playback_speed);
+                ffp_set_playback_rate(ffp, 1.1);
             } else {
                 ffp_set_playback_rate(ffp, 1.0);
             }
