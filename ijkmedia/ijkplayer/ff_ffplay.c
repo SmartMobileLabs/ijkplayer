@@ -3062,8 +3062,8 @@ static double calculatePlaybackSpeed(int diffToRealtime) {
     if(diffToRealtime > 0) {
         playback_speed = 1.0 + 2*diffToRealtime/1000.0;
 
-        if(playback_speed > 1.1) {
-            playback_speed = 1.1;
+        if(playback_speed > 2) {
+            playback_speed = 2;
         }
     }
 
@@ -3637,9 +3637,9 @@ static int read_thread(void *arg)
             is->av_sync_type = AV_SYNC_AUDIO_MASTER;
             if (cke_debug) printf ("cke: diff= %d, diffaudio = %d diffVideo %d\n",diff,diffAudio,diffVideo);
             if(diff > 0) {
-                ffp_set_playback_rate(ffp, 1.1);
+                ffp_set_playback_rate(ffp, 2.1);
             } else {
-                ffp_set_playback_rate(ffp, 1.0);
+                ffp_set_playback_rate(ffp, 2.0);
             }
 
         } else {
