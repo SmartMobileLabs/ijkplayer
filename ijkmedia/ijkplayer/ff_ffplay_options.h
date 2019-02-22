@@ -193,7 +193,12 @@ static const AVOption ffp_context_options[] = {
         OPTION_OFFSET(soundtouch_enable),            OPTION_INT(0, 0, 1) },
     { "mediacodec-sync",                 "mediacodec: use msg_queue for synchronise",
         OPTION_OFFSET(mediacodec_sync),           OPTION_INT(0, 0, 1) },
-
+    { "overclock_mode",                  "clock speed: faster-than-mormal",
+        OPTION_OFFSET(foo_overclock_mode),           OPTION_INT(0, 0, 1) },
+    { "frame_timestamp_signal",                  "video rendering timestamp: send video timestamp every Xth frame rendered - 0 means do not send",
+        OPTION_OFFSET(frame_timestamp_signal),           OPTION_INT(0, 0, 100) },
+    { "normal_catchup_speed_times_1000",                  "normal mode: how fast is the playback speed adapted to catch up for network jitters",
+        OPTION_OFFSET(normal_catchup_speed_times_1000),           OPTION_INT(1100, 1000, 2000) },
     { NULL }
 };
 

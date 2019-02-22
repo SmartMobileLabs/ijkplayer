@@ -947,8 +947,12 @@ static void video_image_display2(FFPlayer *ffp)
             }
         }
 
-        if ( is != NULL &&  is->ic != NULL)
+        if ( ffp->frame_timestamp_signal != 0 && is != NULL &&  is->ic != NULL )
         {
+              if (ffp->frame_timestamp_current_count >= ffp->frame_timestamp_signal)
+              {
+                  ffp->frame_timestamp_current_count = 0; 
+                  // SML: we need to send a timestamp signal to the player user for potential data overlay 
                   struct MediaTimestamp foo; 
                   foo.measurement_time_us = av_gettime_relative();
                   foo.start_time_realtime_us = is->ic->start_time_realtime; 
@@ -958,13 +962,15 @@ static void video_image_display2(FFPlayer *ffp)
                       int64_t pts_from_pkt = (int64_t )(vp->pts * 1000000);
                       int64_t pts_from_avframe = vp->frame->pts;
                       int64_t pts_from_avframe1 = vp->frame->pkt_pts;
-                      printf( "cke4 : time %lld, pts %lld  pts_from_vp %lld pts_from_AVFrame3 %lld pts_from_AVFrame2 %lld    \n",
+                      printf( "cke7 : time %lld, pts %lld  pts_from_vp %lld pts_from_AVFrame3 %lld pts_from_AVFrame2 %lld    \n",
                                   (long long )is->ic->start_time_realtime,
                                   (long long) pts_from_pkt, (long long)foo.pts_us, (long long) pts_from_avframe, (long long ) pts_from_avframe1
                              );
                   }
                   // foo is copied into the message - do not do memory handling
                   ffp_notify_msg4(ffp, FFP_MSG_VIDEO_TIMESTAMP, 0, 0, &foo, sizeof(foo));
+              }
+              ffp->frame_timestamp_current_count += 1; 
         }
         SDL_VoutDisplayYUVOverlay(ffp->vout, vp->bmp);
         ffp->stat.rendered_frames++;
@@ -3056,17 +3062,25 @@ static int is_realtime(AVFormatContext *s)
     return 0;
 }
 
-static double calculatePlaybackSpeed(int diffToRealtime) {
-    double playback_speed = 1.0;
+static double calculatePlaybackSpeed( FFPlayer *ffp , int diffToRealtime) {
+    double playback_speed = ffp->playback_speed_normal;
 
     if(diffToRealtime > 0) {
-        playback_speed = 1.0 + 2*diffToRealtime/1000.0;
-
-        if(playback_speed > 2) {
-            playback_speed = 2;
+        if (ffp->foo_overclock_mode)
+        {
+            // in overclock mode we always run with a very high speed
+            playback_speed = ffp->playback_speed_catchup; 
+        }
+        else 
+        {
+            // the farther we are from realtime, the quicker we must play
+            playback_speed = 1.0 + 2*diffToRealtime/1000.0;
+            if(playback_speed > ffp->playback_speed_catchup) {
+                playback_speed = ffp->playback_speed_catchup;
+            }
         }
     }
-
+    if (cke_debug) printf ("cke7: returning playback speed %lf\n",playback_speed);
     return playback_speed;
 }
 
@@ -3632,41 +3646,24 @@ static int read_thread(void *arg)
             int diffVideo = queue_size_video.ms - maxBuffer;
             int diffAudio = queue_size_audio.ms - maxBuffer;
             int diff = diffVideo > diffAudio ? diffVideo : diffAudio; 
-            playback_speed = calculatePlaybackSpeed(diff);
+            // always try to catch up with the highest delta
+            playback_speed = calculatePlaybackSpeed(ffp,diff);
 
             is->av_sync_type = AV_SYNC_AUDIO_MASTER;
-            if (cke_debug) printf ("cke: diff= %d, diffaudio = %d diffVideo %d\n",diff,diffAudio,diffVideo);
-            if(diff > 0) {
-                ffp_set_playback_rate(ffp, 2.1);
-            } else {
-                ffp_set_playback_rate(ffp, 2.0);
-            }
+            if (cke_debug) printf ("cke: diff= %d, diffaudio = %d diffVideo %d playback_speed = %lf\n",diff,diffAudio,diffVideo,playback_speed);
+
+            ffp_set_playback_rate(ffp, playback_speed);
 
         } else {
 
             int diff = queue_size_video.ms-maxBuffer;
 
-            calculatePlaybackSpeed(diff);
-
             is->av_sync_type = AV_SYNC_EXTERNAL_CLOCK;
-
-            playback_speed = calculatePlaybackSpeed(diff);
-
-            if(diff > 0) {
-                set_clock_speed(&is->extclk, playback_speed);
-            } else {
-                set_clock_speed(&is->extclk, 1.0);
-            }
+            playback_speed = calculatePlaybackSpeed(ffp, diff);
+            set_clock_speed(&is->extclk, playback_speed);
 
         }
 
-        if(playback_speed > 1.3) {
-            is->muted = 1;
-            ffp->display_disable = 1;
-        } else {
-            is->muted = 0;
-            ffp->display_disable = 0;
-        }
 
         if (ffp->packet_buffering) {
             io_tick_counter = SDL_GetTickHR();
@@ -4203,6 +4200,19 @@ void *ffp_set_inject_opaque(FFPlayer *ffp, void *opaque)
     return prev_weak_thiz;
 }
 
+void ffp_option_update_derived_values(FFPlayer *ffp)
+{
+    /* calculate derived values */
+    printf ("cke7. calling ffp_option_update_derived_values foo_overclock_mode %d %d \n",ffp->foo_overclock_mode, ffp->normal_catchup_speed_times_1000);
+    ffp->playback_speed_normal = 1.0;
+    ffp->playback_speed_catchup = ((double) ffp->normal_catchup_speed_times_1000)/1000;
+    ffp->frame_timestamp_current_count = 0; 
+    if (ffp->foo_overclock_mode)
+    {
+         ffp->playback_speed_normal = 2.0;
+         ffp->playback_speed_catchup = 2.0;
+    }
+}
 void ffp_set_option(FFPlayer *ffp, int opt_category, const char *name, const char *value)
 {
     if (!ffp)
@@ -4334,6 +4344,7 @@ int ffp_prepare_async_l(FFPlayer *ffp, const char *file_name)
     av_log(NULL, AV_LOG_INFO, "===================\n");
 
     av_opt_set_dict(ffp, &ffp->player_opts);
+    ffp_option_update_derived_values(ffp);
     if (!ffp->aout) {
         ffp->aout = ffpipeline_open_audio_output(ffp->pipeline, ffp);
         if (!ffp->aout)

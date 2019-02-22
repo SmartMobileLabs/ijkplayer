@@ -143,6 +143,8 @@ static unsigned sws_flags = SWS_BICUBIC;
 #define SD_IMAGE 1  // 320*180
 #define LD_IMAGE 0  // 160*90
 #define MAX_DEVIATION 1200000   // 1200ms
+struct FFPlayer; 
+void ffp_option_update_derived_values(struct FFPlayer *ffp);
 
 typedef struct GetImgInfo {
     char *img_path;
@@ -685,6 +687,14 @@ typedef struct FFPlayer {
     int mediacodec_handle_resolution_change;
     int mediacodec_auto_rotate;
 
+    /* SML options and values */
+    int foo_overclock_mode;
+    int frame_timestamp_current_count; 
+    int frame_timestamp_signal;
+    int normal_catchup_speed_times_1000;
+    double playback_speed_normal;
+    double playback_speed_catchup;
+    /* end of SML options and values */
     int opensles;
     int soundtouch_enable;
 
@@ -798,6 +808,13 @@ inline static void ffp_reset_internal(FFPlayer *ffp)
     ffp->start_on_prepared      = 1;
     ffp->first_video_frame_rendered = 0;
     ffp->sync_av_start          = 1;
+    /* SML start */
+    ffp->foo_overclock_mode         = 0;   // option
+    ffp->frame_timestamp_signal = 0;       // option
+    ffp->frame_timestamp_current_count = 0;
+    ffp->normal_catchup_speed_times_1000   = 1100; //option 
+    ffp_option_update_derived_values(ffp);
+    /* SML end */
     ffp->enable_accurate_seek   = 0;
     ffp->accurate_seek_timeout  = MAX_ACCURATE_SEEK_TIMEOUT;
 
