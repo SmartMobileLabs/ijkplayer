@@ -1287,8 +1287,17 @@ public final class IjkMediaPlayer extends AbstractMediaPlayer {
                 return null;
             }
 
-            Log.i(TAG, String.format(Locale.US, "selected codec: %s rank=%d", bestCodec.mCodecInfo.getName(), bestCodec.mRank));
-            return bestCodec.mCodecInfo.getName();
+            if (true) {
+                // normal mode of operation   	
+                Log.i(TAG, String.format(Locale.US, "selected codec: %s rank=%d", bestCodec.mCodecInfo.getName(), bestCodec.mRank));
+                return bestCodec.mCodecInfo.getName();
+            }else {
+                // select your own codec name here if you want to debug with a
+                // specific SW decoder
+                String name = new String("OMX.SEC.hevc.sw.dec");
+                Log.i(TAG, String.format(Locale.US, "selected debug codec: %s ", name));
+                return name;
+            }
         }
     }
 

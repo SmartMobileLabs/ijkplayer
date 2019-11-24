@@ -170,13 +170,16 @@ static SDL_AMediaCodec *create_codec_l(JNIEnv *env, IJKFF_Pipenode *node)
     return acodec;
 }
 
+
+static int findPrefix(char * p, int prefix_len) ;
+
+
 static int recreate_format_l(JNIEnv *env, IJKFF_Pipenode *node)
 {
     IJKFF_Pipenode_Opaque *opaque         = node->opaque;
     FFPlayer              *ffp            = opaque->ffp;
     int                    rotate_degrees = 0;
 
-    ALOGI("AMediaFormat: %s, %dx%d\n", opaque->mcc.mime_type, opaque->codecpar->width, opaque->codecpar->height);
     SDL_AMediaFormat_deleteP(&opaque->output_aformat);
     opaque->input_aformat = SDL_AMediaFormatJava_createVideoFormat(env, opaque->mcc.mime_type, opaque->codecpar->width, opaque->codecpar->height);
     if (opaque->codecpar->extradata && opaque->codecpar->extradata_size > 0) {
@@ -246,11 +249,18 @@ static int recreate_format_l(JNIEnv *env, IJKFF_Pipenode *node)
             SDL_AMediaFormat_setBuffer(opaque->input_aformat, "csd-0", convert_buffer, esds_size);
             free(convert_buffer);
         } else {
-            // Codec specific data
-            // SDL_AMediaFormat_setBuffer(opaque->aformat, "csd-0", opaque->codecpar->extradata, opaque->codecpar->extradata_size);
-            ALOGE("csd-0: naked\n");
+             if (opaque->codecpar->codec_id == AV_CODEC_ID_H264){
+                  h264_setMediaCodecBuffers(opaque);
+             } else if (opaque->codecpar->codec_id == AV_CODEC_ID_HEVC)
+             {
+                  // set the media codec's codec params
+                  hevc_setMediaCodecBuffers(opaque);
+             } else 
+             {
+                 ALOGE("cke55 csd-0: naked\n");
+             }
         }
-    } else {
+    } else {        
         ALOGE("no buffer(%d)\n", opaque->codecpar->extradata_size);
     }
 
@@ -272,6 +282,243 @@ fail:
     return -1;
 }
 
+
+void h264_setMediaCodecBuffers(IJKFF_Pipenode_Opaque *opaque )
+{
+        ALOGD("cke55 h264 codec extradata2 length %d codec_id = %d extradata[0] = %d, extradata[1] = %d\n", (int)  opaque->codecpar->extradata_size,
+                              (int) opaque->codecpar->codec_id,
+                              (int) opaque->codecpar->extradata[0], 
+                              (int) opaque->codecpar->extradata[1] );
+        for(int i = 0; i < opaque->codecpar->extradata_size; i+=4) {
+           ALOGD("    extra-data[%d]: %02x%02x%02x%02x\n", i, (int)opaque->codecpar->extradata[i+0], 
+                                      (int)opaque->codecpar->extradata[i+1], 
+                                      (int)opaque->codecpar->extradata[i+2], 
+                                      (int)opaque->codecpar->extradata[i+3]);
+        }
+            char * p = opaque->codecpar->extradata;
+            int n_nal = 0; 
+            char * sps = 0; 
+            int sps_len = 0; 
+            char * pps = 0; 
+            int  pps_len = 0; 
+            int prefix_len = findPrefix(p,1000);
+            int current_nal_start = - 1; 
+            int current_nal_end = -1; 
+            int i; 
+            for (i  = 0; i < opaque->codecpar->extradata_size ;i++ )
+            {
+                 if(findPrefix(p,prefix_len)==prefix_len)
+                 {
+                      if (current_nal_start != -1)
+                      {
+                           current_nal_end = i - 1;
+                           switch (opaque->codecpar->extradata[current_nal_start])
+                           {
+                                case 0x67: 
+                                      {
+                                      ALOGE("cke55 found sps NAL from %d to  %d\n",current_nal_start, current_nal_end);
+                                      sps = &opaque->codecpar->extradata[current_nal_start];
+                                      sps_len = current_nal_end - current_nal_start + 1; 
+                                      }
+                                      break; 
+                                case 0x68: 
+                                      {
+                                      ALOGE("cke55 found pps NAL from %d to  %d\n",current_nal_start, current_nal_end);
+                                      pps = &opaque->codecpar->extradata[current_nal_start];
+                                      pps_len = current_nal_end - current_nal_start + 1; 
+                                      }
+                                      break; 
+                                default: 
+                                      ALOGE("cke55 found unknown NAL from %d to  %d\n",current_nal_start, current_nal_end);
+                                      break; 
+                          }
+                      } 
+                      current_nal_start = i + prefix_len;  
+                 }
+                 p += 1;
+            }
+            // Codec specific data
+            if (current_nal_start != -1)
+            {
+                current_nal_end = i - 1;
+                           switch (opaque->codecpar->extradata[current_nal_start])
+                           {
+                                case 0x67: 
+                                      {
+                                      ALOGE("cke55 found sps NAL from %d to  %d\n",current_nal_start, current_nal_end);
+                                      sps = &opaque->codecpar->extradata[current_nal_start];
+                                      sps_len = current_nal_end - current_nal_start + 1; 
+                                      }
+                                      break; 
+                                case 0x68: 
+                                      {
+                                      ALOGE("cke55 found pps NAL from %d to  %d\n",current_nal_start, current_nal_end);
+                                      pps = &opaque->codecpar->extradata[current_nal_start];
+                                      pps_len = current_nal_end - current_nal_start + 1; 
+                                      }
+                                      break; 
+                                default: 
+                                      ALOGE("cke55 found unknown NAL from %d to  %d\n",current_nal_start, current_nal_end);
+                                      break; 
+                          }
+            } 
+
+            if (pps !=  NULL && sps != NULL)
+            {
+                  
+                  {
+                       int  sps_total_len = sps_len + 4;
+                       char * sps_buffer = (char*) malloc (sps_total_len);
+                       char * p1 = sps_buffer; 
+                       p1[0]=0;p1[1]=0;p1[2]=0;p1[3]=1;
+                       p1 += 4; 
+                       memcpy (p1,sps,sps_len);
+                       for(int i = 0; i < sps_total_len; i+=4) {
+                          ALOGE("cke55 csd-0[%d]: %02x%02x%02x%02x\n", i, (int)sps_buffer[i+0], (int)sps_buffer[i+1], (int)sps_buffer[i+2], (int)sps_buffer[i+3]);
+                      }
+                      SDL_AMediaFormat_setBuffer(opaque->input_aformat, "csd-0", sps_buffer, sps_total_len);
+                  }
+                  {
+                       int  pps_total_len = sps_len + 4;
+                       char * pps_buffer = (char*) malloc (pps_total_len);
+                       char * p1 = pps_buffer; 
+                       p1[0]=0;p1[1]=0;p1[2]=0;p1[3]=1;
+                       p1 += 4; 
+                       memcpy (p1,pps,pps_len);
+                      for(int i = 0; i < pps_total_len; i+=4) {
+                          ALOGE("cke55 csd-1[%d]: %02x%02x%02x%02x\n", i, (int)pps_buffer[i+0], (int)pps_buffer[i+1], (int)pps_buffer[i+2], (int)pps_buffer[i+3]);
+                      }
+                      SDL_AMediaFormat_setBuffer(opaque->input_aformat, "csd-1", pps_buffer, pps_total_len);
+                  }
+            }
+}
+void hevc_setMediaCodecBuffers(IJKFF_Pipenode_Opaque *opaque )
+{
+            char * p = opaque->codecpar->extradata;
+            int n_nal = 0; 
+            char * vps = 0; 
+            int vps_len = 0; 
+            char * sps = 0; 
+            int sps_len = 0; 
+            char * pps = 0; 
+            int  pps_len = 0; 
+            int prefix_len = findPrefix(p,1000);
+            int current_nal_start = - 1; 
+            int current_nal_end = -1; 
+            int i; 
+        ALOGD("cke55 hevc codec extradata2 length %d codec_id = %d extradata[0] = %d, extradata[1] = %d\n", (int)  opaque->codecpar->extradata_size,
+                              (int) opaque->codecpar->codec_id,
+                              (int) opaque->codecpar->extradata[0], 
+                              (int) opaque->codecpar->extradata[1] );
+        for(int i = 0; i < opaque->codecpar->extradata_size; i+=4) {
+           ALOGD("    extra-data[%d]: %02x%02x%02x%02x\n", i, (int)opaque->codecpar->extradata[i+0], 
+                                      (int)opaque->codecpar->extradata[i+1], 
+                                      (int)opaque->codecpar->extradata[i+2], 
+                                      (int)opaque->codecpar->extradata[i+3]);
+        }
+            for (i  = 0; i < opaque->codecpar->extradata_size ;i++ )
+            {
+                 if(findPrefix(p,prefix_len)==prefix_len)
+                 {
+                      if (current_nal_start != -1)
+                      {
+                           current_nal_end = i - 1;
+                           switch (opaque->codecpar->extradata[current_nal_start])
+                           {
+                                case 0x40: 
+                                      {
+                                      ALOGE("cke55 found vps NAL from %d to  %d\n",current_nal_start, current_nal_end);
+                                      vps = &opaque->codecpar->extradata[current_nal_start];
+                                      vps_len = current_nal_end - current_nal_start + 1; 
+                                      }
+                                      break; 
+                                case 0x42: 
+                                      {
+                                      ALOGE("cke55 found sps NAL from %d to  %d\n",current_nal_start, current_nal_end);
+                                      sps = &opaque->codecpar->extradata[current_nal_start];
+                                      sps_len = current_nal_end - current_nal_start + 1; 
+                                      }
+                                      break; 
+                                case 0x44: 
+                                      {
+                                      ALOGE("cke55 found pps NAL from %d to  %d\n",current_nal_start, current_nal_end);
+                                      pps = &opaque->codecpar->extradata[current_nal_start];
+                                      pps_len = current_nal_end - current_nal_start + 1; 
+                                      }
+                                      break; 
+                                default: 
+                                      ALOGE("cke55 found unknown NAL from %d to  %d\n",current_nal_start, current_nal_end);
+                                      break; 
+                          }
+                      } 
+                      current_nal_start = i + prefix_len;  
+                 }
+                 p += 1;
+            }
+            // Codec specific data
+            if (current_nal_start != -1)
+            {
+                current_nal_end = i - 1;
+                           switch (opaque->codecpar->extradata[current_nal_start])
+                           {
+                                case 0x40: 
+                                      ALOGE("cke55 found vps NAL from %d to  %d\n",current_nal_start, current_nal_end);
+                                      vps = &opaque->codecpar->extradata[current_nal_start];
+                                      vps_len = current_nal_end - current_nal_start + 1; 
+                                      break; 
+                                case 0x42: 
+                                      {
+                                      ALOGE("cke55 found sps NAL from %d to  %d\n",current_nal_start, current_nal_end);
+                                      sps = &opaque->codecpar->extradata[current_nal_start];
+                                      sps_len = current_nal_end - current_nal_start + 1; 
+                                      }
+                                      break; 
+                                case 0x44: 
+                                      {
+                                      ALOGE("cke55 found pps NAL from %d to  %d\n",current_nal_start, current_nal_end);
+                                      pps = &opaque->codecpar->extradata[current_nal_start];
+                                      pps_len = current_nal_end - current_nal_start + 1; 
+                                      }
+                                      break; 
+                                default: 
+                                      ALOGE("cke55 found unknown NAL from %d to  %d\n",current_nal_start, current_nal_end);
+                                      break; 
+                          }
+            } 
+
+            if (vps != NULL && pps !=  NULL && sps != NULL)
+            {
+                  
+                  int  tmp_len = vps_len + sps_len + pps_len + 3 * 4;
+                  char * tmp1 = (char*) malloc (tmp_len);
+                  char * p1 = tmp1; 
+                  p1[0]=0;p1[1]=0;p1[2]=0;p1[3]=1;
+                  p1 += 4; 
+                  memcpy (p1,vps,vps_len);
+                  p1 += vps_len; 
+                  p1[0]=0;p1[1]=0;p1[2]=0;p1[3]=1;
+                  p1 += 4; 
+                  memcpy (p1,sps,sps_len);
+                  p1 += sps_len; 
+                  p1[0]=0;p1[1]=0;p1[2]=0;p1[3]=1;
+                  p1 += 4; 
+                  memcpy (p1,pps,pps_len);
+                  p1 += pps_len; 
+                  for(int i = 0; i < tmp_len; i+=4) {
+                      ALOGE("cke55 csd-0[%d]: %02x%02x%02x%02x\n", i, (int)tmp1[i+0], (int)tmp1[i+1], (int)tmp1[i+2], (int)tmp1[i+3]);
+                 }
+                 SDL_AMediaFormat_setBuffer(opaque->input_aformat, "csd-0", tmp1, tmp_len);
+            }
+}
+
+
+int findPrefix(char * p, int prefix_len) {
+     char * p_begin = p; 
+     int ret = -1; 
+     while (p-p_begin < prefix_len -1 && !(*p)) {p+= 1;}
+     if ((*p++)==1)  ret = p - p_begin; 
+     return ret; 
+}
 static int reconfigure_codec_l(JNIEnv *env, IJKFF_Pipenode *node, jobject new_surface)
 {
     IJKFF_Pipenode_Opaque *opaque   = node->opaque;
@@ -296,6 +543,13 @@ static int reconfigure_codec_l(JNIEnv *env, IJKFF_Pipenode *node, jobject new_su
             ALOGE("%s:open_video_decoder: create_codec failed\n", __func__);
             ret = -1;
             goto fail;
+        }
+    } else {
+        ALOGE("%s:decoder already exists\n", __func__);
+        if (SDL_AMediaCodec_isStarted(opaque->acodec)) {
+           ALOGE("%s:decoder stop\n", __func__);
+           SDL_VoutAndroid_invalidateAllBuffers(opaque->weak_vout);
+           SDL_AMediaCodec_stop(opaque->acodec);
         }
     }
 
@@ -922,7 +1176,7 @@ static int feed_input_buffer(JNIEnv *env, IJKFF_Pipenode *node, int64_t timeUs, 
         } else {
             time_stamp = 0;
         }
-        // ALOGE("queueInputBuffer, %lld\n", time_stamp);
+        if (cke_debug) ALOGE("queueInputBuffer, %d %lld\n",(int)input_buffer_index, time_stamp);
         amc_ret = SDL_AMediaCodec_queueInputBuffer(opaque->acodec, input_buffer_index, 0, copy_size, time_stamp, queue_flags);
         if (amc_ret != SDL_AMEDIA_OK) {
             ALOGE("%s: SDL_AMediaCodec_getInputBuffer failed\n", __func__);
@@ -1026,6 +1280,7 @@ static int drain_output_buffer_l(JNIEnv *env, IJKFF_Pipenode *node, int64_t time
     int                    ret      = 0;
     SDL_AMediaCodecBufferInfo bufferInfo;
     ssize_t                   output_buffer_index = 0;
+    if (cke_debug) ALOGI("drain output buffer\n");
 
     if (dequeue_count)
         *dequeue_count = 0;
@@ -1036,6 +1291,7 @@ static int drain_output_buffer_l(JNIEnv *env, IJKFF_Pipenode *node, int64_t time
     }
 
     output_buffer_index = SDL_AMediaCodecFake_dequeueOutputBuffer(opaque->acodec, &bufferInfo, timeUs);
+    if (cke_debug) ALOGI("output_buffer_index = %d\n",(int)output_buffer_index);
     if (output_buffer_index == AMEDIACODEC__INFO_OUTPUT_BUFFERS_CHANGED) {
         ALOGI("AMEDIACODEC__INFO_OUTPUT_BUFFERS_CHANGED\n");
         // continue;

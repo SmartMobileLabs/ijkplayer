@@ -134,13 +134,18 @@ static void SDL_AMediaFormatJava_setBuffer(SDL_AMediaFormat* aformat, const char
 
     SDL_AMediaFormat_Opaque *opaque = (SDL_AMediaFormat_Opaque *)aformat->opaque;
     jobject android_media_format = opaque->android_media_format;
+    // if (!opaque->android_byte_buffer) {
+    // cke: always allocate a new buffer as otherwise we end up with only 
+    // one buffer even when multiple calls to setBuffer are called
+    // especially for h264 this is a problem because there we need to 
+    // split pps and sps into csd-0 and csd-1
+    {
+    opaque->android_byte_buffer = J4AC_ByteBuffer__allocateDirect__asGlobalRef__catchAll(env, size);
     if (!opaque->android_byte_buffer) {
-        opaque->android_byte_buffer = J4AC_ByteBuffer__allocateDirect__asGlobalRef__catchAll(env, size);
-        if (!opaque->android_byte_buffer) {
             J4A_FUNC_FAIL_TRACE();
             return;
         }
-    }
+     }
 
     ret = J4AC_ByteBuffer__assignData__catchAll(env, opaque->android_byte_buffer, data, size);
     if (ret < 0) {

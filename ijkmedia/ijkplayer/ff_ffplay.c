@@ -144,7 +144,7 @@ struct queue_size {
     int packets;
 };
 
-int cke_debug = 0; 
+int cke_debug = 1; 
 static struct queue_size packet_queue_get_size_ms(PacketQueue *q) {
 
     MyAVPacketList *q_pkt, *q_pkt1;
@@ -1749,6 +1749,7 @@ static int get_video_frame(FFPlayer *ffp, AVFrame *frame)
                     is->viddec.pkt_serial == is->vidclk.serial &&
                     is->videoq.nb_packets) {
                     is->frame_drops_early++;
+                    if (cke_debug) printf ("frame drop early 1\n");
                     is->continuous_frame_drops_early++;
                     if (is->continuous_frame_drops_early > ffp->framedrop) {
                         is->continuous_frame_drops_early = 0;
@@ -3080,7 +3081,7 @@ static double calculatePlaybackSpeed( FFPlayer *ffp , int diffToRealtime) {
             }
         }
     }
-    if (cke_debug) printf ("cke7: returning playback speed %lf\n",playback_speed);
+    if (cke_debug) printf ("returning playback speed %lf\n",playback_speed);
     return playback_speed;
 }
 
@@ -3468,6 +3469,8 @@ static int read_thread(void *arg)
         }
 
         /* if the queue are full, no need to read more */
+        int v_has_enough =  stream_has_enough_packets(is->video_st, is->video_stream, &is->videoq, MIN_FRAMES);
+
         if (ffp->infinite_buffer<1 && !is->seek_req &&
 #ifdef FFP_MERGE
               (is->audioq.size + is->videoq.size + is->subtitleq.size > MAX_QUEUE_SIZE
@@ -3478,6 +3481,7 @@ static int read_thread(void *arg)
                 && stream_has_enough_packets(is->video_st, is->video_stream, &is->videoq, MIN_FRAMES)
                 && stream_has_enough_packets(is->subtitle_st, is->subtitle_stream, &is->subtitleq, MIN_FRAMES)))) {
             if (!is->eof) {
+                if (cke_debug) printf ("buffering on  is: %d, max %d, has_enough %d\n",(int) is->videoq.size, (int)MAX_QUEUE_SIZE ,(int) v_has_enough);
                 ffp_toggle_buffering(ffp, 0);
             }
             /* wait 10 ms */
@@ -3605,6 +3609,7 @@ static int read_thread(void *arg)
         } else if (pkt->stream_index == is->subtitle_stream && pkt_in_play_range) {
             packet_queue_put(&is->subtitleq, pkt);
         } else {
+            if (cke_debug) printf ("cke - discarding packet\n");
             av_packet_unref(pkt);
         }
 
@@ -4835,7 +4840,7 @@ void ffp_set_playback_rate(FFPlayer *ffp, float rate)
     if (!ffp)
         return;
 
-    av_log(ffp, AV_LOG_INFO, "Playback rate: %f\n", rate);
+    av_log(ffp, AV_LOG_DEBUG, "Playback rate: %f\n", rate);
     ffp->pf_playback_rate = rate;
     ffp->pf_playback_rate_changed = 1;
 }

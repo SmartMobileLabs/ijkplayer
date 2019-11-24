@@ -128,6 +128,7 @@ bool SDL_AMediaCodec_isConfigured(SDL_AMediaCodec *acodec)
 
 bool SDL_AMediaCodec_isStarted(SDL_AMediaCodec *acodec)
 {
+    assert(acodec->func_start);
     return acodec->is_started;
 }
 
