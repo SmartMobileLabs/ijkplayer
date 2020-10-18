@@ -19,7 +19,8 @@
 # IJK_FFMPEG_UPSTREAM=git://git.videolan.org/ffmpeg.git
 IJK_FFMPEG_UPSTREAM=ssh://git@gitlab.smartmobilelabs.com:9134/sml/FFmpeg_ijk.git
 IJK_FFMPEG_FORK=ssh://git@gitlab.smartmobilelabs.com:9134/sml/FFmpeg_ijk.git
-IJK_FFMPEG_COMMIT=ff3.3--ijk0.8.0--20170829--001
+# fix mpegts
+IJK_FFMPEG_COMMIT=ff3.3--ijk0.8.0--20170829--001-01
 IJK_FFMPEG_LOCAL_REPO=extra/ffmpeg
 
 set -e
