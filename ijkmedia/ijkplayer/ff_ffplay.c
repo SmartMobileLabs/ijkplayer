@@ -3066,6 +3066,12 @@ static int is_realtime(AVFormatContext *s)
 static double calculatePlaybackSpeed( FFPlayer *ffp , int diffToRealtime) {
     double playback_speed = ffp->playback_speed_normal;
 
+    if(diffToRealtime<0) {
+             playback_speed = 0.99;
+    } else {
+             playback_speed = 1.01;
+    }
+
     if(diffToRealtime > 0) {
         if (ffp->foo_overclock_mode)
         {
@@ -3075,10 +3081,12 @@ static double calculatePlaybackSpeed( FFPlayer *ffp , int diffToRealtime) {
         else 
         {
             // the farther we are from realtime, the quicker we must play
-            playback_speed = 1.0 + 2*diffToRealtime/1000.0;
+            /*playback_speed = 1.0 + 2*diffToRealtime/1000.0;
             if(playback_speed > ffp->playback_speed_catchup) {
                 playback_speed = ffp->playback_speed_catchup;
-            }
+            }*/
+
+
         }
     }
     if (cke_debug) printf ("returning playback speed %lf\n",playback_speed);
@@ -3641,7 +3649,7 @@ static int read_thread(void *arg)
 
 
         // cke - has direct impact on latency and stability - should be made smaller
-        int maxBuffer = 50;
+        int maxBuffer = 100;
         //int maxBuffer = 20;
 
         double playback_speed = 1.0;
@@ -3650,11 +3658,13 @@ static int read_thread(void *arg)
 
             int diffVideo = queue_size_video.ms - maxBuffer;
             int diffAudio = queue_size_audio.ms - maxBuffer;
-            int diff = diffVideo > diffAudio ? diffVideo : diffAudio; 
+            int diff = diffVideo > diffAudio ? diffVideo : diffAudio;
             // always try to catch up with the highest delta
             playback_speed = calculatePlaybackSpeed(ffp,diff);
 
-            is->av_sync_type = AV_SYNC_AUDIO_MASTER;
+           // is->av_sync_type = AV_SYNC_AUDIO_MASTER; // original
+            //is->av_sync_type = AV_SYNC_EXTERNAL_CLOCK; // works
+            is->av_sync_type = AV_SYNC_VIDEO_MASTER; // works
             if (cke_debug) printf ("cke: diff= %d, diffaudio = %d diffVideo %d playback_speed = %lf\n",diff,diffAudio,diffVideo,playback_speed);
 
             ffp_set_playback_rate(ffp, playback_speed);
