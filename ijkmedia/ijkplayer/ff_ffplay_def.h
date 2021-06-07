@@ -694,6 +694,7 @@ typedef struct FFPlayer {
     int normal_catchup_speed_times_1000;
     double playback_speed_normal;
     double playback_speed_catchup;
+    int sync_type;
     /* end of SML options and values */
     int opensles;
     int soundtouch_enable;
@@ -812,7 +813,8 @@ inline static void ffp_reset_internal(FFPlayer *ffp)
     ffp->foo_overclock_mode         = 0;   // option
     ffp->frame_timestamp_signal = 0;       // option
     ffp->frame_timestamp_current_count = 0;
-    ffp->normal_catchup_speed_times_1000   = 1100; //option 
+    ffp->normal_catchup_speed_times_1000   = 1100; //option
+    ffp->sync_type = 0; // 0->AV_SYNC_VIDEO_MASTER 1->AV_SYNC_AUDIO_MASTER 2->AV_SYNC_EXTERNAL_CLOCK
     ffp_option_update_derived_values(ffp);
     /* SML end */
     ffp->enable_accurate_seek   = 0;

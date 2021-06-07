@@ -144,7 +144,9 @@ struct queue_size {
     int packets;
 };
 
-int cke_debug = 1; 
+int cke_debug = 1;
+int tmp_sync_type = -1;
+
 static struct queue_size packet_queue_get_size_ms(PacketQueue *q) {
 
     MyAVPacketList *q_pkt, *q_pkt1;
@@ -1191,6 +1193,7 @@ static double get_master_clock(VideoState *is)
 {
     double val;
 
+
     switch (get_master_sync_type(is)) {
         case AV_SYNC_VIDEO_MASTER:
             val = get_clock(&is->vidclk);
@@ -1463,7 +1466,7 @@ display:
             video_display2(ffp);
     }
     is->force_refresh = 0;
-    if (ffp->show_status) {
+    if (1) {//ffp->show_status
         static int64_t last_time;
         int64_t cur_time;
         int aqsize, vqsize, sqsize __unused;
@@ -3069,11 +3072,12 @@ static double calculatePlaybackSpeed( FFPlayer *ffp , int diffToRealtime) {
     if(diffToRealtime<0) {
              playback_speed = 0.99;
     } else {
-             playback_speed = 1.01;
+             playback_speed = 1.05;
     }
 
     if(diffToRealtime > 0) {
         if (ffp->foo_overclock_mode)
+
         {
             // in overclock mode we always run with a very high speed
             playback_speed = ffp->playback_speed_catchup; 
@@ -3654,6 +3658,14 @@ static int read_thread(void *arg)
 
         double playback_speed = 1.0;
 
+        bool isChanged = false;
+
+
+        if(tmp_sync_type != ffp->sync_type) {
+            isChanged = true;
+            tmp_sync_type = ffp->sync_type;
+        }
+
         if(hasVideo && hasAudio) {
 
             int diffVideo = queue_size_video.ms - maxBuffer;
@@ -3663,21 +3675,63 @@ static int read_thread(void *arg)
             playback_speed = calculatePlaybackSpeed(ffp,diff);
 
            // is->av_sync_type = AV_SYNC_AUDIO_MASTER; // original
-            //is->av_sync_type = AV_SYNC_EXTERNAL_CLOCK; // works
-            is->av_sync_type = AV_SYNC_VIDEO_MASTER; // works
+           // is->av_sync_type = AV_SYNC_EXTERNAL_CLOCK; // works
+           // is->av_sync_type = AV_SYNC_VIDEO_MASTER; // works
+
+            switch (ffp->sync_type) {
+                case 0:
+                    is->av_sync_type = AV_SYNC_AUDIO_MASTER;
+                    break;
+                case 1:
+                    is->av_sync_type = AV_SYNC_VIDEO_MASTER;
+                    break;
+                default:
+                    is->av_sync_type = AV_SYNC_EXTERNAL_CLOCK;
+                    break;
+            }
+
+            //printf ("wkh_ff: hd_av_sync_type= %d and sync_type_params= %d\n",is->av_sync_type, ffp->sync_type);
             if (cke_debug) printf ("cke: diff= %d, diffaudio = %d diffVideo %d playback_speed = %lf\n",diff,diffAudio,diffVideo,playback_speed);
 
-            ffp_set_playback_rate(ffp, playback_speed);
+           // ffp_set_playback_rate(ffp, playback_speed);
 
         } else {
 
             int diff = queue_size_video.ms-maxBuffer;
 
-            is->av_sync_type = AV_SYNC_EXTERNAL_CLOCK;
+            if(ffp->sync_type == 0 || ffp->sync_type == 1) {
+                is->av_sync_type = AV_SYNC_VIDEO_MASTER;
+            } else {
+                is->av_sync_type = AV_SYNC_EXTERNAL_CLOCK;
+            }
+            printf ("wkh_ff: sd_av_sync_type= %d and sync_type_params= %d\n",is->av_sync_type, ffp->sync_type);
+            //is->av_sync_type = AV_SYNC_EXTERNAL_CLOCK;
             playback_speed = calculatePlaybackSpeed(ffp, diff);
-            set_clock_speed(&is->extclk, playback_speed);
+         //   set_clock_speed(&is->extclk, playback_speed);
 
         }
+
+        if (isChanged) {
+
+          printf ("wkh_ff: config is changed");
+
+          isChanged = false;
+          switch (ffp->sync_type) {
+              case 0:
+                  printf ("wkh_ff: config is audclk");
+                  set_clock_speed(&is->audclk, playback_speed);
+                  break;
+              case 1:
+                  printf ("wkh_ff: config is vidclk");
+                  set_clock_speed(&is->vidclk, playback_speed);
+                  break;
+              default:
+                  printf ("wkh_ff: config is extclk");
+                  set_clock_speed(&is->extclk, playback_speed);
+                  break;
+          }
+        }
+
 
 
         if (ffp->packet_buffering) {

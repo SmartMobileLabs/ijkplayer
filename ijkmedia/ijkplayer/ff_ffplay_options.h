@@ -195,6 +195,8 @@ static const AVOption ffp_context_options[] = {
         OPTION_OFFSET(mediacodec_sync),           OPTION_INT(0, 0, 1) },
     { "overclock_mode",                  "clock speed: faster-than-mormal",
         OPTION_OFFSET(foo_overclock_mode),           OPTION_INT(0, 0, 1) },
+    { "sync_type",                  "sync_type: determine the sync of the frame by video(0), audio(1) or external()2",
+        OPTION_OFFSET(sync_type),           OPTION_INT(0, 1, 2) },
     { "frame_timestamp_signal",                  "video rendering timestamp: send video timestamp every Xth frame rendered - 0 means do not send",
         OPTION_OFFSET(frame_timestamp_signal),           OPTION_INT(0, 0, 100) },
     { "normal_catchup_speed_times_1000",                  "normal mode: how fast is the playback speed adapted to catch up for network jitters",
