@@ -144,7 +144,7 @@ struct queue_size {
     int packets;
 };
 
-int cke_debug = 1;
+int cke_debug = 0;
 int tmp_sync_type = -1;
 
 static struct queue_size packet_queue_get_size_ms(PacketQueue *q) {
@@ -2041,8 +2041,16 @@ static int audio_thread(void *arg)
 
     do {
         ffp_audio_statistic_l(ffp);
-        if ((got_frame = decoder_decode_frame(ffp, &is->auddec, frame, NULL)) < 0)
-            goto the_end;
+        while (1) {
+            if ((got_frame = decoder_decode_frame(ffp, &is->auddec, frame, NULL)) < 0)
+                goto the_end;
+            if (is->audioq.nb_packets > 20){
+            	printf ("dropping audio frame\n");
+            	continue;
+            }
+            break;
+        }
+
 
         if (got_frame) {
                 tb = (AVRational){1, frame->sample_rate};
@@ -3632,12 +3640,13 @@ static int read_thread(void *arg)
         struct queue_size queue_size_audio;
         queue_size_audio = packet_queue_get_size_ms(&is->audioq);
 
-        if (cke_debug)
-                printf("Queue sizes2: Video %d ms/%d pkts\tAudio %d ms/%dpkts, pictq size %d", queue_size_video.ms, 
+        if (true)
+                printf("Queue sizes2: Video %d ms/%d pkts\tAudio %d ms/%dpkts, pictq size %d sampleq size %d", queue_size_video.ms,
                              queue_size_video.packets, 
                              queue_size_audio.ms, 
                              queue_size_audio.packets, 
-                             frame_queue_nb_remaining(&is->pictq) );
+                             frame_queue_nb_remaining(&is->pictq),
+							 frame_queue_nb_remaining(&is->sampq));
 
 
         bool hasAudio = is->audio_st? true : false;
@@ -3704,14 +3713,14 @@ static int read_thread(void *arg)
             } else {
                 is->av_sync_type = AV_SYNC_EXTERNAL_CLOCK;
             }
-            printf ("wkh_ff: sd_av_sync_type= %d and sync_type_params= %d\n",is->av_sync_type, ffp->sync_type);
+            if (cke_debug) printf ("wkh_ff: sd_av_sync_type= %d and sync_type_params= %d\n",is->av_sync_type, ffp->sync_type);
             //is->av_sync_type = AV_SYNC_EXTERNAL_CLOCK;
             playback_speed = calculatePlaybackSpeed(ffp, diff);
          //   set_clock_speed(&is->extclk, playback_speed);
 
         }
 
-        if (isChanged) {
+        if (0 && isChanged) {
 
           printf ("wkh_ff: config is changed");
 
