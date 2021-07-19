@@ -54,8 +54,8 @@ FF_DEP_LIBSOXR_LIB=
 
 FF_CFG_FLAGS=
 
-FF_EXTRA_CFLAGS=
-FF_EXTRA_LDFLAGS=
+FF_EXTRA_CFLAGS=" -DANDROID_PLATFORM=android-23 "
+FF_EXTRA_LDFLAGS="  -DANDROID_PLATFORM=android-23 "
 FF_DEP_LIBS=
 
 FF_MODULE_DIRS="compat libavcodec libavfilter libavformat libavutil libswresample libswscale"
@@ -76,6 +76,7 @@ FF_GCC_64_VER=$IJK_GCC_64_VER
 
 #----- armv7a begin -----
 if [ "$FF_ARCH" = "armv7a" ]; then
+    FF_ANDROID_PLATFORM=android-23
     FF_BUILD_NAME=ffmpeg-armv7a
     FF_BUILD_NAME_OPENSSL=openssl-armv7a
     FF_BUILD_NAME_LIBSOXR=libsoxr-armv7a
@@ -144,7 +145,7 @@ elif [ "$FF_ARCH" = "x86_64" ]; then
     FF_ASSEMBLER_SUB_DIRS="x86"
 
 elif [ "$FF_ARCH" = "arm64" ]; then
-    FF_ANDROID_PLATFORM=android-21
+    FF_ANDROID_PLATFORM=android-23
 
     FF_BUILD_NAME=ffmpeg-arm64
     FF_BUILD_NAME_OPENSSL=openssl-arm64
@@ -224,7 +225,7 @@ FF_CFLAGS="-O3 -Wall -pipe \
     -ffast-math \
     -fstrict-aliasing -Werror=strict-aliasing \
     -Wno-psabi -Wa,--noexecstack \
-    -DANDROID -DNDEBUG"
+    -DANDROID -DNDEBUG -DANDROID_PLATFORM=android-23"
 
 # cause av_strlcpy crash with gcc4.7, gcc4.8
 # -fmodulo-sched -fmodulo-sched-allow-regmoves
