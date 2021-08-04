@@ -52,6 +52,8 @@
 
 #define ACODEC_RETRY -1
 #define ACODEC_EXIT  -2
+void h264_setMediaCodecBuffers(IJKFF_Pipenode_Opaque *opaque );
+void hevc_setMediaCodecBuffers(IJKFF_Pipenode_Opaque *opaque );
 
 typedef struct AMC_Buf_Out {
     int port;
