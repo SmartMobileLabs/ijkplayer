@@ -224,7 +224,7 @@ FF_CFLAGS="-O3 -Wall -pipe \
     -std=c99 \
     -ffast-math \
     -fstrict-aliasing -Werror=strict-aliasing \
-    -Wno-psabi -Wa,--noexecstack \
+    -Wa,--noexecstack \
     -DANDROID -DNDEBUG -DANDROID_PLATFORM=android-23"
 
 # cause av_strlcpy crash with gcc4.7, gcc4.8
