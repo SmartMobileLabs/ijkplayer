@@ -260,7 +260,20 @@ LABEL_RETURN:
     return;
 }
 
-// WEPTUN
+//cke
+static jlong
+IjkMediaPlayer_getRenderedAudioFrames(JNIEnv *env, jobject thiz)
+{
+    // MPTRACE("%s\n", __func__);
+    IjkMediaPlayer *mp = jni_get_media_player(env, thiz);
+
+    JNI_CHECK_GOTO(mp, env, NULL, "mpjni: getRenderedAudioFrames: null mp", LABEL_RETURN);
+    jlong rendered_audio_frames = mp->ffplayer->stat.rendered_audio_frames;
+
+LABEL_RETURN:
+    ijkmp_dec_ref_p(&mp);
+    return rendered_audio_frames;
+}
 static jlong
 IjkMediaPlayer_getRenderedFrames(JNIEnv *env, jobject thiz)
 {
@@ -1243,7 +1256,7 @@ static JNINativeMethod g_methods[] = {
     { "_setAndroidIOCallback",  "(Ltv/danmaku/ijk/media/player/misc/IAndroidIO;)V", (void *)IjkMediaPlayer_setAndroidIOCallback },
 
     { "_setVideoSurface",       "(Landroid/view/Surface;)V", (void *) IjkMediaPlayer_setVideoSurface },
-    { "getRenderedFrames",      "()J",      (void *) IjkMediaPlayer_getRenderedFrames },
+    { "getRenderedAudioFrames", "()J",      (void *) IjkMediaPlayer_getRenderedAudioFrames },
     { "getQueueSizeVideoMs",    "()J",      (void *) IjkMediaPlayer_getQueueSizeVideoMs },
     { "getQueueSizeAudioMs",    "()J",      (void *) IjkMediaPlayer_getQueueSizeAudioMs },
     { "hasVideo",               "()Z",      (void *) IjkMediaPlayer_hasVideo },

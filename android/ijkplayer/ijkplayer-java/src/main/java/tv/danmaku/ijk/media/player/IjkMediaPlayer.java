@@ -680,6 +680,7 @@ public final class IjkMediaPlayer extends AbstractMediaPlayer {
     public native long getDuration();
 
     public native long getRenderedFrames();
+    public native long getRenderedAudioFrames();
 
     public native long getQueueSizeVideoMs();
 

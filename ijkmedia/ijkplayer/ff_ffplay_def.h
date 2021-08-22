@@ -491,6 +491,7 @@ typedef struct FFTrackCacheStatistic
 typedef struct FFStatistic
 {
     int64_t rendered_frames;
+    int64_t rendered_audio_frames;
 
     int64_t queue_size_video_ms;
 
