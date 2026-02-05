@@ -30,3 +30,6 @@ APP_CFLAGS := -O3 -Wall -pipe \
     -fstrict-aliasing -Werror=strict-aliasing \
      -Wa,--noexecstack \
     -DANDROID -DNDEBUG
+    -Wa,--noexecstack \
+   -DANDROID -DNDEBUG \
+   -std=c99
